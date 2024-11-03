@@ -4,15 +4,17 @@ version = "0.1.0"
 description = ""
 authors = ["Johanna Lehto <johannaeveliinalehto@gmail.com>"]
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.10"
-fastapi = "^0.115.2"
-uvicorn = "^0.31.1"
+python = "^3.12"
+fastapi = "^0.115.4"
+uvicorn = "^0.32.0"
 python-dotenv = "^1.0.1"
 requests = "^2.32.3"
 skyfield = "^1.49"
 pre-commit = "^4.0.1"
+pymongo = {extras = ["srv"], version = "^4.10.1"}
 
 
 [build-system]

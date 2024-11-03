@@ -1,0 +1,33 @@
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: satellite_bank_api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"  # Maps container's port 8000 to host's port 8000
+    environment:
+      - MONGO_USERNAME_FILE=/run/secrets/mongo_username
+      - MONGO_PASSWORD_FILE=/run/secrets/mongo_password
+      - MONGO_HOST=cluster0.afeh5pj.mongodb.net
+      - MONGO_DBNAME=satellites_db
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:latest
+    container_name: mongo_db
+    ports:
+      - "27017:27017"  # Maps container's port 27017 to host's port 27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+
+
+secrets:
+  mongo_username:
+    file: ./secrets/MONGO_USERNAME
+  mongo_password:
+    file: ./secrets/MONGO_PASSWORD
