@@ -1,7 +1,9 @@
 from models import SatellitesNowResponse, Satellite
 
 
-def api_response_to_satellites_now_response(response: dict, lat: float, lon: float) -> SatellitesNowResponse:
+def api_response_to_satellites_now_response(
+    response: dict, lat: float, lon: float
+) -> SatellitesNowResponse:
     return SatellitesNowResponse(
         location=(lat, lon),
         satellites=[

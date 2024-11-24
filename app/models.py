@@ -1,15 +1,32 @@
+from datetime import datetime
+
 from pydantic import BaseModel
 
 
-class Satellite (BaseModel):
+class Satellite(BaseModel):
     id: int
     name: str
-    country_of_origin: str | None
-    launched_since: str
-  #  description: str | None
-    direction: str | None
-    visible_until: str | None
 
-class SatellitesNowResponse (BaseModel):
+
+class SatellitesNowResponse(BaseModel):
     location: tuple[float, float]
     satellites: list[Satellite]
+
+
+class Position(BaseModel):
+    timestamp: datetime
+    latitude: float
+    longitude: float
+    altitude_km: float
+
+
+class CelestrakSatelliteOutput(BaseModel):
+    satellite_id: str
+    satellite_name: str
+    next_positions: list[Position]
+
+
+class SatellitePosition(BaseModel):
+    satellite_id: str
+    satellite_name: str
+    next_positions: list[Position]

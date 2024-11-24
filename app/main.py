@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
+from app.satellite_radar.router import router as satellite_radar_router
+
 app = FastAPI()
 
-@app.get("/")
-def read_root():
-    return {"message": "Hello, SatelliteBank!"}
+app.include_router(satellite_radar_router)
