@@ -1,10 +1,11 @@
+version: "3.8"
 
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: satellite_bank_api
+    container_name: satellite_catalog_api
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     ports:
       - "8000:8000"  # Maps container's port 8000 to host's port 8000
@@ -15,6 +16,9 @@ services:
       - MONGO_DBNAME=satellites_db
     depends_on:
       - mongo
+    secrets:
+      - mongo_username
+      - mongo_password
 
   mongo:
     image: mongo:latest

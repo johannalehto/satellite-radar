@@ -20,4 +20,3 @@ poetry.lock
 *.orig
 
 secrets/
-

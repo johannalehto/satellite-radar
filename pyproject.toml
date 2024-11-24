@@ -15,7 +15,14 @@ requests = "^2.32.3"
 skyfield = "^1.49"
 pre-commit = "^4.0.1"
 pymongo = {extras = ["srv"], version = "^4.10.1"}
+pydantic = "^2.9.2"
+astropy = "^6.1.5"
 
+
+[tool.poetry.group.dev.dependencies]
+autopep8 = "^2.3.1"
+pytest = "^8.3.3"
+pytest-mock = "^3.14.0"
 
 [build-system]
 requires = ["poetry-core"]
