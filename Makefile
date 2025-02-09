@@ -18,8 +18,9 @@ build:  ## Build Docker images
 docker-logs:  ## View Docker logs
 	$(DOCKER_COMPOSE) logs -f
 
+# eg. make script name=update_satellite_catalog.py
 script: ## Run a script in the app container
-	$(DOCKER_COMPOSE) exec app poetry run python scripts/$(script)
+	$(DOCKER_COMPOSE) exec app poetry run python scripts/$(name)
 
 # Local development
 .PHONY: run-local
@@ -47,13 +48,13 @@ install:  ## Install dependencies with Poetry
 update-dependencies:  ## Update dependencies with Poetry
 	$(POETRY) update
 
-# Celery Tasks
+# Celery tasks
 .PHONY: celery-worker celery-beat
 celery-worker:  ## Start Celery worker
-	$(POETRY) run celery -A app.satellite_catalog.celery worker --loglevel=info
+	$(POETRY) run celery -A app.satellite_catalog.celery_app worker --loglevel=info
 
 celery-beat:  ## Start Celery beat scheduler
-	$(POETRY) run celery -A app.satellite_catalog.celery beat --loglevel=info
+	$(POETRY) run celery -A app.satellite_catalog.celery_app beat --loglevel=info
 
 # Help
 .PHONY: help

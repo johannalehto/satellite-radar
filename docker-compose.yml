@@ -8,27 +8,53 @@ services:
     container_name: satellite_catalog_api
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     ports:
-      - "8000:8000"  # Maps container's port 8000 to host's port 8000
-    environment:
-      - MONGO_USERNAME_FILE=/run/secrets/mongo_username
-      - MONGO_PASSWORD_FILE=/run/secrets/mongo_password
-      - MONGO_HOST=cluster0.afeh5pj.mongodb.net
-      - MONGO_DBNAME=satellites_db
-    depends_on:
-      - mongo
+      - "8000:8000"  # map container's port 8000 to host's port 8000
+    env_file:
+      - .env
     secrets:
       - mongo_username
       - mongo_password
+    depends_on:
+      - mongo
+      - redis
+
 
   mongo:
     image: mongo:latest
     container_name: mongo_db
     ports:
-      - "27017:27017"  # Maps container's port 27017 to host's port 27017
+      - "27017:27017"  # map container's port 27017 to host's port 27017
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - mongo_data:/data/db
 
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: celery_worker
+    command: celery -A app.satellite_catalog.celery_app worker --loglevel=info
+    env_file:
+      - .env
+    secrets:
+      - mongo_username
+      - mongo_password
+    depends_on:
+      - app
+      - redis
+
+volumes:
+  mongo_data:
 
 secrets:
   mongo_username:

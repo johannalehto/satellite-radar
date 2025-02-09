@@ -1,13 +1,15 @@
 import os
+from pathlib import Path
 
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def load_secret(file_path):
-    try:
-        with open(file_path) as file:
-            return file.read().strip()
-    except FileNotFoundError:
-        return None
-
+    secret_path = Path(file_path)
+    if secret_path.exists():
+        return secret_path.read_text().strip()
+    return None
 
 MONGO_USERNAME = load_secret("/run/secrets/mongo_username") or os.getenv(
     "MONGO_USERNAME"
@@ -22,6 +24,11 @@ MONGO_URL = (
     f"mongodb+srv://{MONGO_USERNAME}:{MONGO_PASSWORD}@{MONGO_HOST}/"  # noqa: E231
     f"{MONGO_DBNAME}?retryWrites=true&w=majority&appName=Cluster0"
 )
+
+print(f"DEBUG: MONGO_URL = {MONGO_URL}")
+
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+CELERY_BACKEND_URL = os.getenv("CELERY_BACKEND_URL", "redis://localhost:6379/0")
 
 CELESTRAK_100_BRIGHTEST_URL = (
     "https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle"
