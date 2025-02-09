@@ -1,8 +1,8 @@
 from pymongo import MongoClient, UpdateOne
-from app.config import MONGO_URL
+from app.config import MONGO_URI
 from app.models import SatellitePosition
 
-client = MongoClient(MONGO_URL)
+client = MongoClient(MONGO_URI)
 db = client["satellites_db"]
 collection = db["satellite_catalog"]
 
