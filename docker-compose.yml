@@ -46,12 +46,16 @@ services:
     command: celery -A app.satellite_catalog.celery_app worker --loglevel=info
     env_file:
       - .env
+    environment:
+      - MONGO_URI=mongodb+srv://johanna:${MONGO_PASSWORD}@${MONGO_HOST}/satellites_db?retryWrites=true&w=majority&appName=Cluster0
     secrets:
       - mongo_username
       - mongo_password
     depends_on:
       - app
       - redis
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
 
 volumes:
   mongo_data:

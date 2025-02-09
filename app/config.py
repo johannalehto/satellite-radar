@@ -25,10 +25,8 @@ MONGO_URL = (
     f"{MONGO_DBNAME}?retryWrites=true&w=majority&appName=Cluster0"
 )
 
-print(f"DEBUG: MONGO_URL = {MONGO_URL}")
-
-CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
-CELERY_BACKEND_URL = os.getenv("CELERY_BACKEND_URL", "redis://localhost:6379/0")
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0")
+CELERY_BACKEND_URL = os.getenv("CELERY_BACKEND_URL", "redis://redis:6379/0")
 
 CELESTRAK_100_BRIGHTEST_URL = (
     "https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle"
