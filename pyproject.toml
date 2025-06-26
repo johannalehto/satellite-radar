@@ -17,7 +17,7 @@ pre-commit = "^4.0.1"
 pymongo = {extras = ["srv"], version = "^4.10.1"}
 pydantic = "^2.9.2"
 astropy = "^6.1.5"
-celery = "^5.4.0"
+celery = {extras = ["redis"], version = "^5.5.3"}
 redis = "^5.2.1"
 
 
