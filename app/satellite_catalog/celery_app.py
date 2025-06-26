@@ -13,5 +13,11 @@ celery = Celery(
 
 celery.conf.update(
     timezone="UTC",
-    enable_utc=True
+    enable_utc=True,
+    beat_schedule={
+            "update-satellite-catalog": {
+                "task": "app.satellite_catalog.tasks.scheduled_update",
+                "schedule": 86400.0,  # every 24 hours
+            }
+    }
 )
