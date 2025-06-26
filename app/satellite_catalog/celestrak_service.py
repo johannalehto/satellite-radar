@@ -11,8 +11,8 @@ from app.models import CelestrakSatelliteOutput, Position
 
 logger = logging.getLogger(__name__)
 
-DURATION_HOURS: Final[int] = 2
-INTERVAL_MINUTES: Final[int] = 15
+DURATION_HOURS: Final[int] = 24
+INTERVAL_MINUTES: Final[int] = 60
 MAX_ALTITUDE_KM: Final[float] = 2000.0
 
 class CelestrakService:
@@ -49,7 +49,7 @@ class CelestrakService:
             start_time = datetime(*start_time)
 
         time_intervals = self.generate_time_intervals(start_time=start_time)
-        all_celetrak_satellites = []
+        all_celestrak_satellites = []
 
         for satellite in self.satellites:
             subpoints = [satellite.at(t) for t in time_intervals]
@@ -57,11 +57,11 @@ class CelestrakService:
             for subpoint, timestamp in zip(subpoints, time_intervals):
                 positions.append(self.create_position(subpoint, timestamp))
 
-            all_celetrak_satellites.append(CelestrakSatelliteOutput(
+            all_celestrak_satellites.append(CelestrakSatelliteOutput(
                 satellite_id=satellite.model.satnum_str,
                 satellite_name=satellite.name,
                 next_positions=positions
             ))
-        logger.info(f"DEBUG: Added Celetrak satellites: {[sat.satellite_name for sat in all_celetrak_satellites]}")
-        return all_celetrak_satellites
+        logger.info(f"DEBUG: Added Celestrak satellites: {[sat.satellite_name for sat in all_celestrak_satellites]}")
+        return all_celestrak_satellites
 
