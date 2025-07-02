@@ -1,0 +1,13 @@
+# fly.toml app configuration file generated for satellite-catalog-cron on 2025-07-01T22:15:09+03:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'satellite-catalog-updater'
+primary_region = 'arn'
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+

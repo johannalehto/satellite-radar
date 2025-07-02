@@ -63,6 +63,24 @@ docker-celery-worker:  ## start Celery worker in Docker container
 run-celery-task:  ## start Celery worker & trigger the task
 	docker exec -it celery_worker poetry run celery -A app.satellite_catalog.celery_app call app.satellite_catalog.tasks.scheduled_update
 
+#  Satellite catalog updater
+deploy-scheduled-updater:
+	@echo "🔪 Cleaning old stopped machines..."
+	fly machines list -a satellite-catalog-updater --json | \
+	jq -r '.[] | select(.state == "stopped") | .id' | \
+	xargs -r -n1 fly machine destroy -a satellite-catalog-updater
+
+	@echo "🚀 Deploying latest code..."
+	fly deploy -c fly.updater.toml --no-cache
+
+	@echo "📆 Creating new scheduled hourly machine..."
+	fly machine run . -a satellite-catalog-updater  \
+		--schedule hourly \
+		--restart no \
+		--region arn \
+		-- \
+		python app/satellite_catalog/run_updater.py
+
 
 
 # Help

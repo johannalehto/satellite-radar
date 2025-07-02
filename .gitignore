@@ -11,7 +11,7 @@ env/
 .dockerignore
 *.dockerignore
 docker-compose.override.yml
-poetry.lock
+fly.toml
 
 gp.php
 */gp.php
