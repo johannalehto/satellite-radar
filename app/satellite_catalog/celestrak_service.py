@@ -11,7 +11,7 @@ from app.models import CelestrakSatelliteOutput, Position
 
 logger = logging.getLogger(__name__)
 
-DURATION_HOURS: Final[int] = 24
+DURATION_HOURS: Final[int] = 26
 INTERVAL_MINUTES: Final[int] = 60
 MAX_ALTITUDE_KM: Final[float] = 2000.0
 
@@ -60,7 +60,8 @@ class CelestrakService:
             all_celestrak_satellites.append(CelestrakSatelliteOutput(
                 satellite_id=satellite.model.satnum_str,
                 satellite_name=satellite.name,
-                next_positions=positions
+                next_positions=positions,
+                fetched_at=self.t.utc_datetime()
             ))
         logger.info(f"DEBUG: Added Celestrak satellites: {[sat.satellite_name for sat in all_celestrak_satellites]}")
         return all_celestrak_satellites

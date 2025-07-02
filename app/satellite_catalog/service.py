@@ -17,7 +17,8 @@ class SatelliteCatalogService:
             SatellitePosition(
                 satellite_id=output.satellite_id,
                 satellite_name=output.satellite_name,
-                next_positions=output.next_positions
+                next_positions=output.next_positions,
+                fetched_at=output.fetched_at
             )
             for output in satellite_positions]
 

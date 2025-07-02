@@ -45,6 +45,7 @@ def create_celestrak_output(**kwargs: Any) -> CelestrakSatelliteOutput:
         id=kwargs.get("id", 12345),
         satellite_name=kwargs.get("satellite_name", "MockSatellite"),
         next_positions=positions,
+        fetched_at=datetime.now(),
     )
 
 
