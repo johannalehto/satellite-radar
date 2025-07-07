@@ -13,6 +13,11 @@ class SatellitesNowResponse(BaseModel):
     satellites: list[Satellite]
 
 
+class SatellitesHereResponse(BaseModel):
+    location: tuple[float, float]
+    satellites: list[Satellite]
+
+
 class Position(BaseModel):
     timestamp: datetime
     latitude: float

@@ -27,7 +27,7 @@ fly machine run . -a satellite-catalog-updater \
   --restart no \
   -- \
   python app/satellite_catalog/run_updater.py
-```  
+```
 Fly handles launching, running, and shutting down the Machine each day.
 
 

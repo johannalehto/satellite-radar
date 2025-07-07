@@ -5,11 +5,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 def load_secret(file_path):
     secret_path = Path(file_path)
     if secret_path.exists():
         return secret_path.read_text().strip()
     return None
+
 
 MONGO_USERNAME = load_secret("/run/secrets/mongo_username") or os.getenv(
     "MONGO_USERNAME"

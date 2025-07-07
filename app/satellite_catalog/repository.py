@@ -6,6 +6,7 @@ client = MongoClient(MONGO_URI)
 db = client["satellites_db"]
 collection = db["satellite_catalog"]
 
+
 def upsert_positions_to_db(positions: list[SatellitePosition]) -> None:
     """
     inserts a list of SatellitePosition data into MongoDB.
@@ -14,13 +15,15 @@ def upsert_positions_to_db(positions: list[SatellitePosition]) -> None:
         UpdateOne(
             {"satellite_id": position.satellite_id},
             {"$set": position.model_dump()},
-            upsert=True
+            upsert=True,
         )
         for position in positions
     ]
     result = collection.bulk_write(operations)
     print(
-        f"Matched {result.matched_count}, modified {result.modified_count}, upserted {result.upserted_count} satellite positions into MongoDB")
+        f"Matched {result.matched_count}, modified {result.modified_count}, upserted {result.upserted_count} satellite positions into MongoDB"
+    )
+
 
 def get_satellite_data_from_db(lat, lon, timestamp):
     """retrieves satellites above a certain lat/lon at a given timestamp."""

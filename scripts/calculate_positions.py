@@ -3,7 +3,7 @@ from app.satellite_catalog.celestrak_service import CelestrakService
 
 def run_calculate_positions():
     service = CelestrakService()
-    positions = service.calculate_positions()
+    service.calculate_positions()
     print("Ran calculate_positions")
 
 

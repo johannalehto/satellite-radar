@@ -3,7 +3,10 @@ from datetime import datetime
 from app.models import SatellitePosition, SatellitesNowResponse, Satellite
 from app.satellite_catalog.celestrak_service import CelestrakService
 
-from app.satellite_catalog.repository import get_satellite_data_from_db, upsert_positions_to_db
+from app.satellite_catalog.repository import (
+    get_satellite_data_from_db,
+    upsert_positions_to_db,
+)
 
 
 class SatelliteCatalogService:
@@ -18,9 +21,10 @@ class SatelliteCatalogService:
                 satellite_id=output.satellite_id,
                 satellite_name=output.satellite_name,
                 next_positions=output.next_positions,
-                fetched_at=output.fetched_at
+                fetched_at=output.fetched_at,
             )
-            for output in satellite_positions]
+            for output in satellite_positions
+        ]
 
         upsert_positions_to_db(position_data)
 
@@ -30,14 +34,15 @@ class SatelliteCatalogService:
             location=(satellite_data[0].latitude, satellite_data[0].longitude),
             satellites=[
                 Satellite(
-                    id=satellite["satellite_id"],
-                    name=satellite["satellite_name"]
+                    id=satellite["satellite_id"], name=satellite["satellite_name"]
                 )
                 for satellite in satellite_data
-            ]
+            ],
         )
 
-    def get_satellites_from_catalog(self, lat: float, lon: float, now: datetime) -> SatellitesNowResponse | None:
+    def get_satellites_from_catalog(
+        self, lat: float, lon: float, now: datetime
+    ) -> SatellitesNowResponse | None:
 
         try:
             satellites_now_from_db = get_satellite_data_from_db(lat, lon, now)

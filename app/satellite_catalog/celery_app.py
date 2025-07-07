@@ -8,16 +8,16 @@ celery = Celery(
     "satellite_catalog",
     broker=CELERY_BROKER_URL,
     backend=CELERY_BACKEND_URL,
-    include=["app.satellite_catalog.tasks"]
+    include=["app.satellite_catalog.tasks"],
 )
 
 celery.conf.update(
     timezone="UTC",
     enable_utc=True,
     beat_schedule={
-            "update-satellite-catalog": {
-                "task": "app.satellite_catalog.tasks.scheduled_update",
-                "schedule": 86400.0,  # every 24 hours
-            }
-    }
+        "update-satellite-catalog": {
+            "task": "app.satellite_catalog.tasks.scheduled_update",
+            "schedule": 86400.0,  # every 24 hours
+        }
+    },
 )

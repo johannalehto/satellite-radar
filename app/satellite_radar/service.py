@@ -1,24 +1,16 @@
 from datetime import datetime
 
-from app.models import SatellitesNowResponse
-from app.satellite_catalog.service import get_satellites_from_catalog
-
-def build_satellites_list(satellites: list) -> list:
-    return [
-        {
-            "id": sat["satid"],
-            "name": sat["satname"],
-        }
-        for sat in satellites
-    ]
+from app.models import SatellitesNowResponse, SatellitesHereResponse
+from app.satellite_catalog.service import SatelliteCatalogService
 
 
-def build_satellites_now_response(satellites_now: dict) -> SatellitesNowResponse:
+def build_satellites_here_response(
+    satellites_now: SatellitesNowResponse,
+) -> SatellitesHereResponse:
 
-    response = SatellitesNowResponse(
+    response = SatellitesHereResponse(
         location=satellites_now.location,
-        satellites=build_satellites_list(satellites_now.satellites)[:5],
-
+        satellites=satellites_now.satellites[:5],
     )
 
     return response
@@ -26,18 +18,20 @@ def build_satellites_now_response(satellites_now: dict) -> SatellitesNowResponse
 
 class SatelliteRadarService:
     def __init__(self):
-        pass
+        self.satellite_catalog = SatelliteCatalogService()
 
-    def get_satellites_above(self, lat: float, lon: float) -> SatellitesNowResponse | None:
+    def get_satellites_here(
+        self, lat: float, lon: float
+    ) -> SatellitesHereResponse | None:
 
         now = datetime.now()
 
         try:
-            satellites_now = get_satellites_from_catalog(lat, lon, now)
+            satellites_now = self.satellite_catalog.get_satellites_from_catalog(
+                lat, lon, now
+            )
         except Exception as e:
             print(f"An error occurred: {e}")
             return None
 
-        return build_satellites_now_response(satellites_now)
-
-
+        return build_satellites_here_response(satellites_now)

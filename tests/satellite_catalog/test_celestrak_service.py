@@ -1,6 +1,5 @@
 import pytest
-from unittest.mock import MagicMock
-from skyfield.api import Topos, load
+from skyfield.api import load
 from app.models import Position, CelestrakSatelliteOutput
 from app.satellite_catalog.celestrak_service import CelestrakService
 from tests.factory import create_earth_satellite
@@ -22,9 +21,8 @@ def test_generate_time_intervals(timescale):
     start_time = timescale.now().utc_datetime()
     intervals = service.generate_time_intervals(start_time)
 
-    assert len(intervals) == (2 * 60) // 15  # 2 hours, every 15 minutes
-    # assert intervals[0] == start_time
-    # assert intervals[-1] > start_time
+    assert len(intervals) == (26 * 60) // 60  # 26 hours, every 60 minutes
+    assert intervals[0].utc_datetime().minute == start_time.minute
 
 
 def test_calculate_positions(timescale, satellites):
