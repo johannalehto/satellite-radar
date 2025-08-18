@@ -23,3 +23,7 @@ gp.php
 *.orig
 
 secrets/
+
+.coverage
+coverage.xml
+htmlcov/
