@@ -26,7 +26,7 @@ fly machine run . -a satellite-catalog-updater \
   --schedule daily \
   --restart no \
   -- \
-  python app/satellite_catalog/run_updater.py
+  python app/satellite_catalog/updater.py
 ```
 Fly handles launching, running, and shutting down the Machine each day.
 
@@ -38,8 +38,7 @@ Fly handles launching, running, and shutting down the Machine each day.
 ```bash
 app/
   satellite_catalog/
-    tasks.py           Main task logic
-    run_updater.py        Script triggering `scheduled_update()`
+    updater.py        Script triggering `run_update() `
 
 Dockerfile             Shared with `satellites-api-core`
 fly.updater.toml          Config for the updater-specific Fly app

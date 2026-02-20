@@ -49,20 +49,6 @@ install:  ## Install dependencies with Poetry
 update-dependencies:  ## Update dependencies with Poetry
 	$(POETRY) update
 
-# Celery tasks
-.PHONY: celery-worker celery-beat docker-celery-worker
-celery-worker:  ## start Celery worker
-	$(POETRY) run celery -A app.satellite_catalog.celery_app worker --loglevel=info
-
-celery-beat:  ## start Celery beat scheduler
-	$(POETRY) run celery -A app.satellite_catalog.celery_app beat --loglevel=info
-
-docker-celery-worker:  ## start Celery worker in Docker container
-	$(DOCKER_EXEC) celery_worker poetry run celery -A app.satellite_catalog.celery_app worker --loglevel=info
-
-run-celery-task:  ## start Celery worker & trigger the task
-	docker exec -it celery_worker poetry run celery -A app.satellite_catalog.celery_app call app.satellite_catalog.tasks.scheduled_update
-
 #  Satellite catalog updater
 deploy-scheduled-updater:
 	@echo "🔪 Cleaning old stopped machines..."
@@ -80,7 +66,7 @@ deploy-scheduled-updater:
 		--region arn \
 		--vm-size shared-cpu-1x \
 		--memory 256 \
-		python app/satellite_catalog/run_updater.py
+		python app/satellite_catalog/updater.py
 
 
 

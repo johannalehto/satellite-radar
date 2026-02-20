@@ -27,10 +27,6 @@ MONGO_URI = (
     f"{MONGO_DBNAME}?retryWrites=true&w=majority&appName=Cluster0"
 )
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
-CELERY_BROKER_URL = REDIS_URL
-CELERY_BACKEND_URL = REDIS_URL
-
 CELESTRAK_100_BRIGHTEST_URL = (
     "https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle"
 )
