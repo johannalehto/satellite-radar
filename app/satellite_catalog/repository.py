@@ -1,4 +1,5 @@
 from pymongo import MongoClient, UpdateOne
+
 from app.config import MONGO_URI
 from app.models import SatellitePosition
 
@@ -21,7 +22,10 @@ def upsert_positions_to_db(positions: list[SatellitePosition]) -> None:
     ]
     result = collection.bulk_write(operations)
     print(
-        f"Matched {result.matched_count}, modified {result.modified_count}, upserted {result.upserted_count} satellite positions into MongoDB"
+        f"Matched {result.matched_count}, "
+        f"modified {result.modified_count}, "
+        f"upserted {result.upserted_count} "
+        "satellite positions into MongoDB"
     )
 
 

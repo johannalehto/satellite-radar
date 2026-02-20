@@ -1,13 +1,11 @@
 from datetime import datetime
+from typing import Any
+from unittest.mock import MagicMock
 
 import pytest
-from unittest.mock import MagicMock
-from skyfield.api import load
-from app.models import Position, CelestrakSatelliteOutput
+from skyfield.api import EarthSatellite, load
 
-
-from typing import Any
-from skyfield.api import EarthSatellite
+from app.models import CelestrakSatelliteOutput, Position
 
 
 def create_tle_data(**kwargs: Any) -> list[str]:

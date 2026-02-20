@@ -1,8 +1,7 @@
 from datetime import datetime
 
-from app.models import SatellitePosition, SatellitesNowResponse, Satellite
+from app.models import Satellite, SatellitePosition, SatellitesNowResponse
 from app.satellite_catalog.celestrak_service import CelestrakService
-
 from app.satellite_catalog.repository import (
     get_satellite_data_from_db,
     upsert_positions_to_db,
@@ -33,9 +32,7 @@ class SatelliteCatalogService:
         return SatellitesNowResponse(
             location=(satellite_data[0].latitude, satellite_data[0].longitude),
             satellites=[
-                Satellite(
-                    id=satellite["satellite_id"], name=satellite["satellite_name"]
-                )
+                Satellite(id=satellite["satellite_id"], name=satellite["satellite_name"])
                 for satellite in satellite_data
             ],
         )

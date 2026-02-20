@@ -28,18 +28,26 @@ script: ## Run a script in the app container
 run-local:  ## Run the app locally with Poetry
 	$(POETRY) run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-# Testing and　formatting
+# Testing and formatting
 .PHONY: test format lint
-test:  ## Run all tests with pytest
-	$(POETRY) run pytest --color=yes -s -vvv --log-cli-level=INFO
 
-format:  ## Format code with black, isort, and run flake8
+test:  ## Run tests with coverage (verbose)
+	$(POETRY) run pytest \
+		--color=yes \
+		-s \
+		-vvv \
+		--log-cli-level=INFO \
+		--cov=app \
+		--cov-report=term-missing \
+		--cov-report=xml
+
+format:  ## Auto-fix lint issues and format code
+	$(POETRY) run ruff check . --fix
 	$(POETRY) run black .
-	$(POETRY) run isort .
-	$(POETRY) run flake8 .
 
-lint:  ## Run pre-commit hooks for linting
-	$(POETRY) run pre-commit run --all-files
+lint:  ## Check linting and formatting (CI-safe)
+	$(POETRY) run ruff check .
+	$(POETRY) run black --check .
 
 # Dependency management
 .PHONY: install update-dependencies

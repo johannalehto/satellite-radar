@@ -13,18 +13,31 @@ uvicorn = "^0.32.0"
 python-dotenv = "^1.0.1"
 requests = "^2.32.3"
 skyfield = "^1.49"
-pre-commit = "^4.0.1"
-pymongo = {extras = ["srv"], version = "^4.10.1"}
+pymongo = { extras = ["srv"], version = "^4.10.1" }
 pydantic = "^2.9.2"
 astropy = "^6.1.5"
 
-
 [tool.poetry.group.dev.dependencies]
-autopep8 = "^2.3.1"
 pytest = "^8.3.3"
 pytest-mock = "^3.14.0"
-coverage = "^7.10.4"
 pytest-cov = "^6.2.1"
+black = "^25.1.0"
+ruff = "^0.9.9"
+pre-commit = "^4.0.1"
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
 
 [build-system]
 requires = ["poetry-core"]

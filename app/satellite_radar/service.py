@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from app.models import SatellitesNowResponse, SatellitesHereResponse
+from app.models import SatellitesHereResponse, SatellitesNowResponse
 from app.satellite_catalog.service import SatelliteCatalogService
 
 
@@ -20,16 +20,12 @@ class SatelliteRadarService:
     def __init__(self):
         self.satellite_catalog = SatelliteCatalogService()
 
-    def get_satellites_here(
-        self, lat: float, lon: float
-    ) -> SatellitesHereResponse | None:
+    def get_satellites_here(self, lat: float, lon: float) -> SatellitesHereResponse | None:
 
         now = datetime.now()
 
         try:
-            satellites_now = self.satellite_catalog.get_satellites_from_catalog(
-                lat, lon, now
-            )
+            satellites_now = self.satellite_catalog.get_satellites_from_catalog(lat, lon, now)
         except Exception as e:
             print(f"An error occurred: {e}")
             return None

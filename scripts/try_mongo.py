@@ -11,9 +11,7 @@ def load_secret(file_path):
         return None
 
 
-MONGO_PASSWORD = load_secret("/run/secrets/mongo_password") or os.getenv(
-    "MONGO_PASSWORD"
-)
+MONGO_PASSWORD = load_secret("/run/secrets/mongo_password") or os.getenv("MONGO_PASSWORD")
 
 MONGO_URL = f"mongodb+srv://johanna:{
     MONGO_PASSWORD}@cluster0.afeh5pj.mongodb.net/test?retryWrites=true&w=majority"

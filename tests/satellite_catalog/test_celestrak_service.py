@@ -1,6 +1,7 @@
 import pytest
 from skyfield.api import load
-from app.models import Position, CelestrakSatelliteOutput
+
+from app.models import CelestrakSatelliteOutput, Position
 from app.satellite_catalog.celestrak_service import CelestrakService
 from tests.factory import create_earth_satellite
 

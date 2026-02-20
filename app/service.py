@@ -1,4 +1,4 @@
-from models import SatellitesNowResponse, Satellite
+from models import Satellite, SatellitesNowResponse
 
 
 def api_response_to_satellites_now_response(

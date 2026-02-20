@@ -1,9 +1,8 @@
 import logging
+from datetime import datetime, timedelta
 from typing import Final
 
 from skyfield.api import load
-from datetime import datetime, timedelta
-
 from skyfield.timelib import Time
 
 from app.config import CELESTRAK_100_BRIGHTEST_URL
@@ -30,9 +29,7 @@ class CelestrakService:
         intervals = []
         for minute in range(0, self.duration_hours * 60, self.interval_minutes):
             t = start_time + timedelta(minutes=minute)
-            intervals.append(
-                self.ts.utc(t.year, t.month, t.day, t.hour, t.minute, t.second)
-            )
+            intervals.append(self.ts.utc(t.year, t.month, t.day, t.hour, t.minute, t.second))
         return intervals
 
     @staticmethod
@@ -57,7 +54,7 @@ class CelestrakService:
         for satellite in self.satellites:
             subpoints = [satellite.at(t) for t in time_intervals]
             positions = []
-            for subpoint, timestamp in zip(subpoints, time_intervals):
+            for subpoint, timestamp in zip(subpoints, time_intervals, strict=False):
                 positions.append(self.create_position(subpoint, timestamp))
 
             all_celestrak_satellites.append(
@@ -68,7 +65,7 @@ class CelestrakService:
                     fetched_at=self.t.utc_datetime(),
                 )
             )
-        logger.info(
-            f"DEBUG: Added Celestrak satellites: {[sat.satellite_name for sat in all_celestrak_satellites]}"
-        )
+        satellite_names = [sat.satellite_name for sat in all_celestrak_satellites]
+
+        logger.info(f"DEBUG: Added Celestrak satellites: {satellite_names}")
         return all_celestrak_satellites
