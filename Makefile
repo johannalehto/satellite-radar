@@ -73,12 +73,13 @@ deploy-scheduled-updater:
 	@echo "🚀 Deploying latest code..."
 	fly deploy -c fly.updater.toml --no-cache
 
-	@echo "📆 Creating new scheduled hourly machine..."
+	@echo "📆 Creating new scheduled daily machine (12:00 JST)..."
 	fly machine run . -a satellite-catalog-updater  \
-		--schedule hourly \
+		--schedule daily \
 		--restart no \
 		--region arn \
-		-- \
+		--vm-size shared-cpu-1x \
+		--memory 256 \
 		python app/satellite_catalog/run_updater.py
 
 
