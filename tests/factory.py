@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -24,28 +24,30 @@ def create_earth_satellite(**kwargs: Any) -> EarthSatellite:
     return EarthSatellite(tle_data[1], tle_data[2], tle_data[0], ts)
 
 
+def create_position(**kwargs: Any) -> Position:
+    data = {
+        "timestamp": datetime.fromisoformat("2024-11-03T12:00:00+00:00"),
+        "latitude": 60.0,
+        "longitude": 24.0,
+        "altitude_km": 500.0,
+    }
+    data.update(kwargs)
+    return Position(**data)
+
+
 def create_celestrak_output(**kwargs: Any) -> CelestrakSatelliteOutput:
     """
     Factory for creating a mock CelestrakSatelliteOutput object.
     """
-    positions = kwargs.pop(
-        "next_positions",
-        [
-            Position(
-                timestamp="2024-11-03T12:00:00Z",
-                latitude=60.0,
-                longitude=24.0,
-                altitude_km=500.0,
-            )
-        ],
-    )
-
-    return CelestrakSatelliteOutput(
-        id=kwargs.get("id", 12345),
-        satellite_name=kwargs.get("satellite_name", "MockSatellite"),
-        next_positions=positions,
-        fetched_at=datetime.now(),
-    )
+    next_positions = kwargs.pop("next_positions", None)
+    data = {
+        "satellite_id": "12345",
+        "satellite_name": "MockSatellite",
+        "next_positions": next_positions if next_positions is not None else [create_position()],
+        "fetched_at": datetime.now(UTC),
+    }
+    data.update(kwargs)
+    return CelestrakSatelliteOutput(**data)
 
 
 @pytest.fixture

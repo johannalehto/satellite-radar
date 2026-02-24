@@ -2,15 +2,17 @@ from datetime import datetime
 
 from app.models import Satellite, SatellitePosition, SatellitesNowResponse
 from app.satellite_catalog.celestrak_service import CelestrakService
-from app.satellite_catalog.repository import (
-    get_satellite_data_from_db,
-    upsert_positions_to_db,
-)
+from app.satellite_catalog.repository import SatelliteCatalogRepository
 
 
 class SatelliteCatalogService:
-    def __init__(self):
-        self.celestrak_service = CelestrakService()
+    def __init__(
+        self,
+        celestrak_service: CelestrakService | None = None,
+        repository: SatelliteCatalogRepository | None = None,
+    ):
+        self.celestrak_service = celestrak_service or CelestrakService()
+        self.repository = repository or SatelliteCatalogRepository()
 
     def update_satellite_catalog(self) -> None:
         satellite_positions = self.celestrak_service.calculate_positions()
@@ -25,7 +27,7 @@ class SatelliteCatalogService:
             for output in satellite_positions
         ]
 
-        upsert_positions_to_db(position_data)
+        self.repository.upsert_positions_to_db(position_data)
 
     @staticmethod
     def _satellite_data_to_satellites_now(satellite_data) -> SatellitesNowResponse:
@@ -42,7 +44,7 @@ class SatelliteCatalogService:
     ) -> SatellitesNowResponse | None:
 
         try:
-            satellites_now_from_db = get_satellite_data_from_db(lat, lon, now)
+            satellites_now_from_db = self.repository.get_satellite_data_from_db(lat, lon, now)
         except Exception as e:
             print(f"An error occurred: {e}")
             return None
