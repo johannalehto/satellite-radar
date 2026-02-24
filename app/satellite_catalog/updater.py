@@ -1,8 +1,8 @@
 from app.satellite_catalog.service import SatelliteCatalogService
 
 
-def run_update() -> None:
-    service = SatelliteCatalogService()
+def run_update(service: SatelliteCatalogService | None = None) -> None:
+    service = service or SatelliteCatalogService()
     service.update_satellite_catalog()
     print("--Satellite catalog update completed--")
 
