@@ -24,7 +24,7 @@ jobs:
         uses: superfly/flyctl-actions/setup-flyctl@master
 
       - name: Deploy satellite-radar
-        run: flyctl deploy --remote-only -c fly.api.toml
+        run: flyctl deploy --remote-only -a satellite-radar -c fly.api.toml
 
       - name: Deploy satellite-catalog-updater
-        run: flyctl deploy --remote-only -c fly.updater.toml
+        run: flyctl deploy --remote-only -a satellite-catalog-updater -c fly.updater.toml
