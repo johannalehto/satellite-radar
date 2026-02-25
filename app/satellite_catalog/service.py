@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from app.db.mongo import create_satellite_catalog_repository
 from app.models import Satellite, SatellitePosition, SatellitesNowResponse
@@ -31,9 +32,14 @@ class SatelliteCatalogService:
         self.repository.upsert_positions_to_db(position_data)
 
     @staticmethod
-    def _satellite_data_to_satellites_now(satellite_data) -> SatellitesNowResponse:
+    def _satellite_data_to_satellites_now(
+        satellite_data: list[dict[str, Any]],
+    ) -> SatellitesNowResponse:
         return SatellitesNowResponse(
-            location=(satellite_data[0].latitude, satellite_data[0].longitude),
+            location=(
+                satellite_data[0]["latitude"],
+                satellite_data[0]["longitude"],
+            ),
             satellites=[
                 Satellite(id=satellite["satellite_id"], name=satellite["satellite_name"])
                 for satellite in satellite_data

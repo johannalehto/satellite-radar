@@ -51,3 +51,19 @@ def test_update_satellite_catalog_maps_two_outputs_correctly(celestrak_outputs):
     assert positions[0].next_positions[0].longitude == 2.0
     assert positions[1].next_positions[0].latitude == 3.0
     assert positions[1].next_positions[0].longitude == 4.0
+
+
+def test_get_satellites_from_catalog_returns_empty_when_no_results() -> None:
+    mock_repository = MagicMock()
+    mock_repository.get_satellite_data_from_db.return_value = []
+
+    service = SatelliteCatalogService(celestrak_service=MagicMock(), repository=mock_repository)
+
+    result = service.get_satellites_from_catalog(
+        lat=60.0,
+        lon=24.0,
+        now=datetime(2026, 2, 25, tzinfo=UTC),
+    )
+
+    assert result.location == (60.0, 24.0)
+    assert result.satellites == []
