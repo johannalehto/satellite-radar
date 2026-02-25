@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from app.db.mongo import create_satellite_catalog_repository
 from app.models import Satellite, SatellitePosition, SatellitesNowResponse
 from app.satellite_catalog.celestrak_service import CelestrakService
 from app.satellite_catalog.repository import SatelliteCatalogRepository
@@ -12,7 +13,7 @@ class SatelliteCatalogService:
         repository: SatelliteCatalogRepository | None = None,
     ):
         self.celestrak_service = celestrak_service or CelestrakService()
-        self.repository = repository or SatelliteCatalogRepository()
+        self.repository = repository or create_satellite_catalog_repository()
 
     def update_satellite_catalog(self) -> None:
         satellite_positions = self.celestrak_service.calculate_positions()

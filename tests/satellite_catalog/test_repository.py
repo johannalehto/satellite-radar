@@ -1,9 +1,12 @@
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 import pytest
 
+from app.models import SatellitePosition
+from app.satellite_catalog.repository import SatelliteCatalogRepository
 from app.satellite_catalog.service import SatelliteCatalogService
-from tests.factory import create_celestrak_output
+from tests.factory import create_celestrak_output, create_position
 
 
 @pytest.fixture
@@ -32,3 +35,57 @@ def test_update_satellite_catalog_calls_repo_with_mapped_positions(celestrak_out
 
     assert len(positions) == 2
     assert positions[0].satellite_id == "12345"
+
+
+def test_upsert_positions_to_db_builds_updateone_with_upsert_true() -> None:
+    mock_collection = MagicMock()
+    mock_bulk_result = MagicMock(
+        matched_count=0,
+        modified_count=0,
+        upserted_count=1,
+    )
+    mock_collection.bulk_write.return_value = mock_bulk_result
+
+    repository = SatelliteCatalogRepository(collection=mock_collection)
+
+    satellite_position = SatellitePosition(
+        satellite_id="12345",
+        satellite_name="MockSat-1",
+        next_positions=[create_position()],
+        fetched_at=datetime(2026, 2, 25, 0, 0, tzinfo=UTC),
+    )
+
+    repository.upsert_positions_to_db([satellite_position])
+
+    mock_collection.bulk_write.assert_called_once()
+
+    update_operations = mock_collection.bulk_write.call_args.args[0]
+    assert len(update_operations) == 1
+
+    update_operation = update_operations[0]
+
+    assert update_operation._filter == {"satellite_id": "12345"}
+    assert update_operation._doc == {"$set": satellite_position.model_dump()}
+    assert update_operation._upsert is True
+
+
+def test_get_satellite_data_from_db_calls_find_with_expected_query() -> None:
+    mock_collection = MagicMock()
+    mock_collection.find.return_value = [{"satellite_id": "12345"}]
+
+    repository = SatelliteCatalogRepository(collection=mock_collection)
+
+    latitude = 60.0
+    longitude = 24.0
+    timestamp = datetime(2026, 2, 25, 0, 0, tzinfo=UTC)
+
+    result = repository.get_satellite_data_from_db(latitude, longitude, timestamp)
+
+    mock_collection.find.assert_called_once_with(
+        {
+            "latitude": {"$gte": latitude - 0.5, "$lte": latitude + 0.5},
+            "longitude": {"$gte": longitude - 0.5, "$lte": longitude + 0.5},
+            "timestamp": timestamp,
+        }
+    )
+    assert result == [{"satellite_id": "12345"}]
