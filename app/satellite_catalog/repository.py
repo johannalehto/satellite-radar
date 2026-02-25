@@ -1,3 +1,6 @@
+from datetime import datetime
+from typing import Any
+
 from pymongo import UpdateOne
 
 from app.models import SatellitePosition
@@ -27,7 +30,9 @@ class SatelliteCatalogRepository:
             "satellite positions into MongoDB"
         )
 
-    def get_satellite_data_from_db(self, lat, lon, timestamp):
+    def get_satellite_data_from_db(
+        self, lat: float, lon: float, timestamp: datetime
+    ) -> list[dict[str, Any]]:
         """retrieves satellites above a certain lat/lon at a given timestamp."""
         query = {
             "latitude": {"$gte": lat - 0.5, "$lte": lat + 0.5},

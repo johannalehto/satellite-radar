@@ -42,12 +42,11 @@ class SatelliteCatalogService:
 
     def get_satellites_from_catalog(
         self, lat: float, lon: float, now: datetime
-    ) -> SatellitesNowResponse | None:
+    ) -> SatellitesNowResponse:
+        satellite_data = self.repository.get_satellite_data_from_db(lat, lon, now)
 
-        try:
-            satellites_now_from_db = self.repository.get_satellite_data_from_db(lat, lon, now)
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            return None
+        if not satellite_data:
+            return SatellitesNowResponse(location=(lat, lon), satellites=[])
+            # TODO: return error or exception. empty list for now.
 
-        return self._satellite_data_to_satellites_now(satellites_now_from_db)
+        return self._satellite_data_to_satellites_now(satellite_data)
