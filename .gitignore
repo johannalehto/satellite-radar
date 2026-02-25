@@ -10,7 +10,8 @@ env/
 .dockerignore
 *.dockerignore
 docker-compose.override.yml
-fly.toml
+fly.api.toml
+fly.updater.toml
 
 gp.php
 */gp.php
