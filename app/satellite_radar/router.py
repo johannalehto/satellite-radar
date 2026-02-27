@@ -1,17 +1,17 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from app.models import SatellitesAboveResponse
 from app.satellite_radar.service import SatelliteRadarService
 
-router = APIRouter()
 
+def create_satellite_radar_router(service: SatelliteRadarService) -> APIRouter:
+    router = APIRouter()
 
-@router.get("/satellite_radar/get_satellites_above/{lat}/{lon}")
-async def get_satellites_above(lat: float, lon: float) -> SatellitesAboveResponse | None:
-    service = SatelliteRadarService()
-    try:
-        satellites_above = service.get_satellites_above(lat, lon)
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return None
-    return satellites_above
+    @router.get("/satellite_radar/get_satellites_above/{lat}/{lon}")
+    async def get_satellites_above(lat: float, lon: float) -> SatellitesAboveResponse:
+        try:
+            return service.get_satellites_now(lat, lon)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e)) from e
+
+    return router

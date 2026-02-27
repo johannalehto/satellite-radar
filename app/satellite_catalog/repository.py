@@ -34,9 +34,20 @@ class SatelliteCatalogRepository:
         self, lat: float, lon: float, timestamp: datetime
     ) -> list[dict[str, Any]]:
         """retrieves satellites above a certain lat/lon at a given timestamp."""
-        query = {
-            "latitude": {"$gte": lat - 0.5, "$lte": lat + 0.5},
-            "longitude": {"$gte": lon - 0.5, "$lte": lon + 0.5},
-            "timestamp": timestamp,
-        }
-        return list(self.collection.find(query))
+        # query = {
+        #     "latitude": {"$gte": lat - 0.5, "$lte": lat + 0.5},
+        #     "longitude": {"$gte": lon - 0.5, "$lte": lon + 0.5},
+        #     "timestamp": timestamp,
+        # }
+        # return list(self.collection.find(query))
+
+        """
+        Placeholder until implementing the real query against next_positions[].
+        For now returns any satellites (limited) so the endpoint works end-to-end.
+        """
+        return list(
+            self.collection.find(
+                {},
+                projection={"_id": 0, "satellite_id": 1, "satellite_name": 1, "fetched_at": 1},
+            ).limit(10)
+        )

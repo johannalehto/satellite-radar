@@ -34,12 +34,11 @@ class SatelliteCatalogService:
     @staticmethod
     def _satellite_data_to_satellites_now(
         satellite_data: list[dict[str, Any]],
+        lat: float,
+        lon: float,
     ) -> SatellitesNowResponse:
         return SatellitesNowResponse(
-            location=(
-                satellite_data[0]["latitude"],
-                satellite_data[0]["longitude"],
-            ),
+            location=(lat, lon),
             satellites=[
                 Satellite(id=satellite["satellite_id"], name=satellite["satellite_name"])
                 for satellite in satellite_data
@@ -55,4 +54,4 @@ class SatelliteCatalogService:
             return SatellitesNowResponse(location=(lat, lon), satellites=[])
             # TODO: return error or exception. empty list for now.
 
-        return self._satellite_data_to_satellites_now(satellite_data)
+        return self._satellite_data_to_satellites_now(satellite_data, lat, lon)
