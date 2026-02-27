@@ -30,11 +30,10 @@ jobs:
         run: |
           set -e
 
-          for id in $(flyctl machines list -a satellite-catalog-updater --json | python3 -c "import sys, json; print(' '.join(m['id'] for m in json.load(sys.stdin)))"); do
-            echo "Destroying machine $id"
-            flyctl machine destroy "$id" -a satellite-catalog-updater --yes
-          done
+          OLD_IDS="$(flyctl machines list -a satellite-catalog-updater --json | python3 -c "import sys, json; print(' '.join(m['id'] for m in json.load(sys.stdin)))")"
+          echo "Old machines: ${OLD_IDS:-<none>}"
 
+          echo "Creating new scheduled machine..."
           flyctl machine run . -a satellite-catalog-updater \
             --schedule daily \
             --restart no \
@@ -43,3 +42,9 @@ jobs:
             --memory 256 \
             -- \
             python -m app.satellite_catalog.updater
+
+          echo "Destroying old machines..."
+          for id in $OLD_IDS; do
+            echo "Destroying machine $id"
+            flyctl machine destroy "$id" -a satellite-catalog-updater --force
+          done
