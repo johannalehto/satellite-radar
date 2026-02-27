@@ -1,14 +1,14 @@
 from datetime import datetime
 
-from app.models import SatellitesHereResponse, SatellitesNowResponse
+from app.models import SatellitesAboveResponse, SatellitesNowResponse
 from app.satellite_catalog.service import SatelliteCatalogService
 
 
-def build_satellites_here_response(
+def build_satellites_above_response(
     satellites_now: SatellitesNowResponse,
-) -> SatellitesHereResponse:
+) -> SatellitesAboveResponse:
 
-    response = SatellitesHereResponse(
+    response = SatellitesAboveResponse(
         location=satellites_now.location,
         satellites=satellites_now.satellites[:5],
     )
@@ -20,7 +20,7 @@ class SatelliteRadarService:
     def __init__(self):
         self.satellite_catalog = SatelliteCatalogService()
 
-    def get_satellites_here(self, lat: float, lon: float) -> SatellitesHereResponse | None:
+    def get_satellites_above(self, lat: float, lon: float) -> SatellitesAboveResponse | None:
 
         now = datetime.now()
 
@@ -30,4 +30,4 @@ class SatelliteRadarService:
             print(f"An error occurred: {e}")
             return None
 
-        return build_satellites_here_response(satellites_now)
+        return build_satellites_above_response(satellites_now)
