@@ -26,5 +26,20 @@ jobs:
       - name: Deploy satellite-radar
         run: flyctl deploy --remote-only -a satellite-radar -c fly.api.toml
 
-      - name: Deploy satellite-catalog-updater
-        run: flyctl deploy --remote-only -a satellite-catalog-updater -c fly.updater.toml
+      - name: Recreate scheduled updater machine (daily run)
+        run: |
+          set -e
+
+          for id in $(flyctl machines list -a satellite-catalog-updater --json | python3 -c "import sys, json; print(' '.join(m['id'] for m in json.load(sys.stdin)))"); do
+            echo "Destroying machine $id"
+            flyctl machine destroy "$id" -a satellite-catalog-updater --yes
+          done
+
+          flyctl machine run . -a satellite-catalog-updater \
+            --schedule daily \
+            --restart no \
+            --region arn \
+            --vm-size shared-cpu-1x \
+            --memory 256 \
+            -- \
+            python -m app.satellite_catalog.updater
