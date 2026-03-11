@@ -3,7 +3,7 @@ from typing import Any
 
 from pymongo import UpdateOne
 
-from app.models import SatellitePosition
+from app.models import SatellitePosition, SatelliteTLEUpdate
 
 
 class SatelliteCatalogRepository:
@@ -28,6 +28,33 @@ class SatelliteCatalogRepository:
             f"modified {result.modified_count}, "
             f"upserted {result.upserted_count} "
             "satellite positions into MongoDB"
+        )
+
+    def upsert_tles_to_db(self, tle_updates: list[SatelliteTLEUpdate]) -> None:
+        operations = [
+            UpdateOne(
+                {"satellite_id": item.satellite_id},
+                {
+                    "$set": {
+                        "satellite_id": item.satellite_id,
+                        "satellite_name": item.satellite_name,
+                        "tle": item.tle.model_dump(),
+                    }
+                },
+                upsert=True,
+            )
+            for item in tle_updates
+        ]
+
+        if not operations:
+            return
+
+        result = self.collection.bulk_write(operations)
+        print(
+            f"Matched {result.matched_count}, "
+            f"modified {result.modified_count}, "
+            f"upserted {result.upserted_count} "
+            "satellite TLE documents into MongoDB"
         )
 
     def get_satellite_data_from_db(

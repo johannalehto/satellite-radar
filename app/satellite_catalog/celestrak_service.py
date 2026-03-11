@@ -3,12 +3,16 @@ from datetime import datetime, timedelta
 from typing import Final
 
 from skyfield.api import load
+from skyfield.sgp4lib import EarthSatellite
 from skyfield.timelib import Time
 
 from app.config import CELESTRAK_100_BRIGHTEST_URL
-from app.models import CelestrakSatelliteOutput, Position
+from app.models import CelestrakSatelliteOutput, Position, TLEData, TLEParsed
 
 logger = logging.getLogger(__name__)
+
+CELESTRAK_GROUP: Final[str] = "visual"
+CELESTRAK_SOURCE: Final[str] = "celestrak"
 
 DURATION_HOURS: Final[int] = 26
 INTERVAL_MINUTES: Final[int] = 60
@@ -24,6 +28,48 @@ class CelestrakService:
 
         self.duration_hours = DURATION_HOURS
         self.interval_minutes = INTERVAL_MINUTES
+
+    @staticmethod
+    def _build_tle_parsed(satellite: EarthSatellite) -> TLEParsed:
+        model = satellite.model
+
+        return TLEParsed(
+            epoch=satellite.epoch.utc_datetime(),
+            inclination_deg=float(model.inclo),
+            raan_deg=float(model.nodeo),
+            eccentricity=float(model.ecco),
+            mean_motion_rev_per_day=float(model.no_kozai * 1440.0 / (2.0 * 3.141592653589793)),
+            drag_term_bstar=float(model.bstar),
+        )
+
+    def fetch_tles(self) -> list[CelestrakSatelliteOutput]:
+        fetched_at = self.t.utc_datetime()
+        all_celestrak_satellites: list[CelestrakSatelliteOutput] = []
+
+        for satellite in self.satellites:
+            line1 = getattr(satellite, "line1", None) or getattr(satellite.model, "line1", None)
+            line2 = getattr(satellite, "line2", None) or getattr(satellite.model, "line2", None)
+
+            all_celestrak_satellites.append(
+                CelestrakSatelliteOutput(
+                    satellite_id=satellite.model.satnum_str,
+                    satellite_name=satellite.name,
+                    fetched_at=fetched_at,
+                    tle=TLEData(
+                        line1=line1,
+                        line2=line2,
+                        group=CELESTRAK_GROUP,
+                        source=CELESTRAK_SOURCE,
+                        fetched_at=fetched_at,
+                        parsed=self._build_tle_parsed(satellite),
+                    ),
+                )
+            )
+
+        satellite_names = [sat.satellite_name for sat in all_celestrak_satellites]
+        logger.info("DEBUG: Added Celestrak satellites: %s", satellite_names)
+
+        return all_celestrak_satellites
 
     def generate_time_intervals(self, start_time: datetime) -> list[Time]:
         intervals = []

@@ -2,7 +2,13 @@ from datetime import datetime
 from typing import Any
 
 from app.db.mongo import create_satellite_catalog_repository
-from app.models import Satellite, SatellitePosition, SatellitesNowResponse
+from app.models import (
+    CelestrakSatelliteOutput,
+    Satellite,
+    SatellitePosition,
+    SatellitesNowResponse,
+    SatelliteTLEUpdate,
+)
 from app.satellite_catalog.celestrak_service import CelestrakService
 from app.satellite_catalog.repository import SatelliteCatalogRepository
 
@@ -15,6 +21,20 @@ class SatelliteCatalogService:
     ):
         self.celestrak_service = celestrak_service or CelestrakService()
         self.repository = repository or create_satellite_catalog_repository()
+
+    @staticmethod
+    def _to_tle_updates(
+        outputs: list[CelestrakSatelliteOutput],
+    ) -> list[SatelliteTLEUpdate]:
+        return [
+            SatelliteTLEUpdate(
+                satellite_id=output.satellite_id,
+                satellite_name=output.satellite_name,
+                tle=output.tle,
+            )
+            for output in outputs
+            if output.tle is not None
+        ]
 
     def update_satellite_catalog(self) -> None:
         satellite_positions = self.celestrak_service.calculate_positions()
@@ -30,6 +50,11 @@ class SatelliteCatalogService:
         ]
 
         self.repository.upsert_positions_to_db(position_data)
+
+    def update_satellite_catalog_with_tle_data(self) -> None:
+        celestrak_outputs = self.celestrak_service.fetch_tles()
+        tle_updates = self._to_tle_updates(celestrak_outputs)
+        self.repository.upsert_tles_to_db(tle_updates)
 
     @staticmethod
     def _satellite_data_to_satellites_now(
