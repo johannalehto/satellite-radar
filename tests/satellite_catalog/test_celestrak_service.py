@@ -44,3 +44,27 @@ def test_calculate_positions(timescale, satellites):
     # assert position.latitude == 60.0
     # assert position.longitude == 24.0
     # assert position.altitude_km == 500.0
+
+
+def test_fetch_tles_returns_outputs_with_tle_data() -> None:
+    service = CelestrakService()
+    service.satellites = [create_earth_satellite()]
+
+    results = service.fetch_tles()
+
+    assert len(results) == 1
+    assert isinstance(results[0], CelestrakSatelliteOutput)
+    assert results[0].satellite_name == "ATLAS CENTAUR 2"
+    assert results[0].satellite_id == "00694"
+
+    assert results[0].tle is not None
+    assert results[0].tle.line1.startswith("1 00694U")
+    assert results[0].tle.line2.startswith("2 00694")
+    assert results[0].tle.group == "visual"
+    assert results[0].tle.source == "celestrak"
+
+    assert results[0].tle.parsed.inclination_deg is not None
+    assert results[0].tle.parsed.raan_deg is not None
+    assert results[0].tle.parsed.eccentricity is not None
+    assert results[0].tle.parsed.mean_motion_rev_per_day is not None
+    assert results[0].tle.parsed.drag_term_bstar is not None

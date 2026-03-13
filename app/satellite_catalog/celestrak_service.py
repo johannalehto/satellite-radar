@@ -47,8 +47,15 @@ class CelestrakService:
         all_celestrak_satellites: list[CelestrakSatelliteOutput] = []
 
         for satellite in self.satellites:
-            line1 = getattr(satellite, "line1", None) or getattr(satellite.model, "line1", None)
-            line2 = getattr(satellite, "line2", None) or getattr(satellite.model, "line2", None)
+            line1 = getattr(satellite, "line1", None)
+            line2 = getattr(satellite, "line2", None)
+
+            # todo: fallback for this value error?
+            if line1 is None or line2 is None:
+                raise ValueError(
+                    f"Missing raw TLE lines for satellite "
+                    f"{satellite.name} ({satellite.model.satnum_str})"
+                )
 
             all_celestrak_satellites.append(
                 CelestrakSatelliteOutput(
