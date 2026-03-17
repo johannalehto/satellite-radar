@@ -46,5 +46,7 @@ jobs:
           echo "Destroying old machines..."
           for id in $OLD_IDS; do
             echo "Destroying machine $id"
-            flyctl machine destroy "$id" -a satellite-catalog-updater --force
+            if ! flyctl machine destroy "$id" -a satellite-catalog-updater --force; then
+              echo "Skipping destroy failure for $id"
+            fi
           done

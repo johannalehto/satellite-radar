@@ -50,12 +50,14 @@ class CelestrakService:
             line1 = getattr(satellite, "line1", None)
             line2 = getattr(satellite, "line2", None)
 
-            # todo: fallback for this value error?
+            # todo: decide fallback for value error
             if line1 is None or line2 is None:
-                raise ValueError(
-                    f"Missing raw TLE lines for satellite "
-                    f"{satellite.name} ({satellite.model.satnum_str})"
+                logger.warning(
+                    "Skipping satellite with missing raw TLE lines: %s (%s)",
+                    satellite.name,
+                    satellite.model.satnum_str,
                 )
+                continue
 
             all_celestrak_satellites.append(
                 CelestrakSatelliteOutput(

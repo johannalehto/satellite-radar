@@ -2,7 +2,7 @@ FROM python:3.12
 WORKDIR /app
 RUN pip install poetry
 COPY pyproject.toml poetry.lock /app/
-RUN poetry config virtualenvs.create false && poetry install --no-root
+RUN poetry config virtualenvs.create false && poetry install --no-root --only main
 COPY . /app
 EXPOSE 8000
 ENV PYTHONPATH=/app

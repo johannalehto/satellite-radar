@@ -59,22 +59,23 @@ update-dependencies:  ## Update dependencies with Poetry
 
 #  Satellite catalog updater
 deploy-scheduled-updater:
-	@echo "🔪 Cleaning old stopped machines..."
-	fly machines list -a satellite-catalog-updater --json | \
-	jq -r '.[] | select(.state == "stopped") | .id' | \
-	xargs -r -n1 fly machine destroy -a satellite-catalog-updater
-
-	@echo "🚀 Deploying latest code..."
-	fly deploy -c fly.updater.toml --no-cache
-
-	@echo "📆 Creating new scheduled daily machine (12:00 JST)..."
-	fly machine run . -a satellite-catalog-updater  \
+	@echo "📋 Listing old machines..."
+	OLD_IDS="$$(fly machines list -a satellite-catalog-updater --json | python3 -c "import sys, json; print(' '.join(m['id'] for m in json.load(sys.stdin)))")"; \
+	echo "Old machines: $${OLD_IDS:-<none>}"; \
+	echo "🚀 Creating new scheduled machine..."; \
+	fly machine run . -a satellite-catalog-updater \
 		--schedule daily \
 		--restart no \
 		--region arn \
 		--vm-size shared-cpu-1x \
 		--memory 256 \
-		python app/satellite_catalog/updater.py
+		-- \
+		python -m app.satellite_catalog.updater; \
+	echo "🧹 Destroying old machines..."; \
+	for id in $$OLD_IDS; do \
+		echo "Destroying machine $$id"; \
+		fly machine destroy "$$id" -a satellite-catalog-updater --force || echo "Skipping destroy failure for $$id"; \
+	done
 
 
 
