@@ -5,7 +5,6 @@ from app.db.mongo import create_satellite_catalog_repository
 from app.models import (
     CelestrakSatelliteOutput,
     Satellite,
-    SatellitePosition,
     SatellitesNowResponse,
     SatelliteTLEUpdate,
 )
@@ -35,21 +34,6 @@ class SatelliteCatalogService:
             for output in outputs
             if output.tle is not None
         ]
-
-    def update_satellite_catalog(self) -> None:
-        satellite_positions = self.celestrak_service.calculate_positions()
-
-        position_data = [
-            SatellitePosition(
-                satellite_id=output.satellite_id,
-                satellite_name=output.satellite_name,
-                next_positions=output.next_positions,
-                fetched_at=output.fetched_at,
-            )
-            for output in satellite_positions
-        ]
-
-        self.repository.upsert_positions_to_db(position_data)
 
     def update_satellite_catalog_with_tle_data(self) -> None:
         celestrak_outputs = self.celestrak_service.fetch_tles()

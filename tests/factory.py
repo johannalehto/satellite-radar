@@ -1,13 +1,10 @@
 from datetime import UTC, datetime
 from typing import Any
-from unittest.mock import MagicMock
 
-import pytest
 from skyfield.api import EarthSatellite, load
 
 from app.models import (
     CelestrakSatelliteOutput,
-    Position,
     SatelliteTLEUpdate,
     TLEData,
     TLEParsed,
@@ -29,21 +26,10 @@ def create_earth_satellite(**kwargs: Any) -> EarthSatellite:
     ts = load.timescale()
     satellite = EarthSatellite(tle_data[1], tle_data[2], tle_data[0], ts)
 
-    # attach raw lines for tests if Skyfield instance does not expose them
-    satellite.line1 = tle_data[1]
-    satellite.line2 = tle_data[2]
+    # # attach raw lines for tests if Skyfield instance does not expose them
+    # satellite.line1 = tle_data[1]
+    # satellite.line2 = tle_data[2]
     return satellite
-
-
-def create_position(**kwargs: Any) -> Position:
-    data = {
-        "timestamp": datetime.fromisoformat("2024-11-03T12:00:00+00:00"),
-        "latitude": 60.0,
-        "longitude": 24.0,
-        "altitude_km": 500.0,
-    }
-    data.update(kwargs)
-    return Position(**data)
 
 
 def create_tle_parsed(**kwargs: Any) -> TLEParsed:
@@ -81,8 +67,6 @@ def create_celestrak_output(**kwargs: Any) -> CelestrakSatelliteOutput:
         "satellite_id": "12345",
         "satellite_name": "MockSatellite",
         "tle": create_tle(),
-        "next_positions": [create_position()],
-        "fetched_at": datetime.now(UTC),
     }
     data.update(kwargs)
     return CelestrakSatelliteOutput(**data)
@@ -97,28 +81,3 @@ def create_satellite_tle_update(**kwargs: Any) -> SatelliteTLEUpdate:
     }
     data.update(kwargs)
     return SatelliteTLEUpdate(**data)
-
-
-@pytest.fixture
-def create_timescale():
-    ts = load.timescale()
-    return ts
-
-
-# TODO: These are old and should be deprecated
-@pytest.fixture
-def create_satellite():
-    satellite = MagicMock()
-    satellite.name = "MockSatellite"
-    satellite.satnum = 12345
-    satellite.at.return_value.subpoint.return_value = MagicMock(
-        latitude=MagicMock(degrees=60.0),
-        longitude=MagicMock(degrees=24.0),
-        elevation=MagicMock(km=500.0),
-    )
-    return satellite
-
-
-@pytest.fixture
-def create_satellites(create_satellite):
-    return [create_satellite]

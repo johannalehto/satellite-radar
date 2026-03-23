@@ -7,13 +7,6 @@ def run_tle_update(service: SatelliteCatalogService | None = None) -> None:
     print("--Satellite TLE update completed--")
 
 
-# TODO: Might be deprecated
-def run_update(service: SatelliteCatalogService | None = None) -> None:
-    service = service or SatelliteCatalogService()
-    service.update_satellite_catalog()
-    print("--Satellite catalog update completed--")
-
-
 if __name__ == "__main__":
     try:
         run_tle_update()

@@ -3,32 +3,12 @@ from typing import Any
 
 from pymongo import UpdateOne
 
-from app.models import SatellitePosition, SatelliteTLEUpdate
+from app.models import SatelliteTLEUpdate
 
 
 class SatelliteCatalogRepository:
     def __init__(self, collection):
         self.collection = collection
-
-    def upsert_positions_to_db(self, positions: list[SatellitePosition]) -> None:
-        """
-        inserts a list of SatellitePosition data into MongoDB.
-        """
-        operations = [
-            UpdateOne(
-                {"satellite_id": position.satellite_id},
-                {"$set": position.model_dump()},
-                upsert=True,
-            )
-            for position in positions
-        ]
-        result = self.collection.bulk_write(operations)
-        print(
-            f"Matched {result.matched_count}, "
-            f"modified {result.modified_count}, "
-            f"upserted {result.upserted_count} "
-            "satellite positions into MongoDB"
-        )
 
     def upsert_tles_to_db(self, tle_updates: list[SatelliteTLEUpdate]) -> None:
         operations = [
@@ -75,6 +55,6 @@ class SatelliteCatalogRepository:
         return list(
             self.collection.find(
                 {},
-                projection={"_id": 0, "satellite_id": 1, "satellite_name": 1, "fetched_at": 1},
+                projection={"_id": 0, "satellite_id": 1, "satellite_name": 1},
             ).limit(10)
         )
