@@ -43,6 +43,12 @@ class TLEData(BaseModel):
     parsed: TLEParsed
 
 
+class RawTLEEntry(BaseModel):
+    name: str
+    line1: str
+    line2: str
+
+
 class CelestrakSatelliteOutput(BaseModel):
     satellite_id: str
     satellite_name: str
