@@ -5,6 +5,7 @@ from skyfield.api import EarthSatellite, load
 
 from app.models import (
     CelestrakSatelliteOutput,
+    SatelliteCatalogItem,
     SatelliteTLEUpdate,
     TLEData,
     TLEParsed,
@@ -81,3 +82,14 @@ def create_satellite_tle_update(**kwargs: Any) -> SatelliteTLEUpdate:
     }
     data.update(kwargs)
     return SatelliteTLEUpdate(**data)
+
+
+def create_satellite_catalog_item(**kwargs: Any) -> SatelliteCatalogItem:
+    tle = kwargs.pop("tle", None)
+    data = {
+        "satellite_id": "12345",
+        "satellite_name": "MockSatellite",
+        "tle": tle if tle is not None else create_tle(),
+    }
+    data.update(kwargs)
+    return SatelliteCatalogItem(**data)

@@ -1,11 +1,7 @@
-from datetime import datetime
-from typing import Any
-
 from app.db.mongo import create_satellite_catalog_repository
 from app.models import (
     CelestrakSatelliteOutput,
-    Satellite,
-    SatellitesNowResponse,
+    SatelliteCatalogItem,
     SatelliteTLEUpdate,
 )
 from app.satellite_catalog.celestrak_service import CelestrakService
@@ -40,27 +36,5 @@ class SatelliteCatalogService:
         tle_updates = self._to_tle_updates(celestrak_outputs)
         self.repository.upsert_tles_to_db(tle_updates)
 
-    @staticmethod
-    def _satellite_data_to_satellites_now(
-        satellite_data: list[dict[str, Any]],
-        lat: float,
-        lon: float,
-    ) -> SatellitesNowResponse:
-        return SatellitesNowResponse(
-            location=(lat, lon),
-            satellites=[
-                Satellite(id=satellite["satellite_id"], name=satellite["satellite_name"])
-                for satellite in satellite_data
-            ],
-        )
-
-    def get_satellites_from_catalog(
-        self, lat: float, lon: float, now: datetime
-    ) -> SatellitesNowResponse:
-        satellite_data = self.repository.get_satellite_data_from_db(lat, lon, now)
-
-        if not satellite_data:
-            return SatellitesNowResponse(location=(lat, lon), satellites=[])
-            # TODO: return error or exception. empty list for now.
-
-        return self._satellite_data_to_satellites_now(satellite_data, lat, lon)
+    def get_all_satellites(self, *, limit: int | None = None) -> list[SatelliteCatalogItem]:
+        return self.repository.get_all_satellites(limit=limit)

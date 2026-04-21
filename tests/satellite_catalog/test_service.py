@@ -1,4 +1,3 @@
-from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -14,22 +13,6 @@ def celestrak_outputs():
         create_celestrak_output(satellite_id="12345", satellite_name="MockSat-1"),
         create_celestrak_output(satellite_id="67890", satellite_name="MockSat-2"),
     ]
-
-
-def test_get_satellites_from_catalog_returns_empty_when_no_results() -> None:
-    mock_repository = MagicMock()
-    mock_repository.get_satellite_data_from_db.return_value = []
-
-    service = SatelliteCatalogService(celestrak_service=MagicMock(), repository=mock_repository)
-
-    result = service.get_satellites_from_catalog(
-        lat=60.0,
-        lon=24.0,
-        now=datetime(2026, 2, 25, tzinfo=UTC),
-    )
-
-    assert result.location == (60.0, 24.0)
-    assert result.satellites == []
 
 
 def test_to_tle_updates_maps_outputs_with_tle() -> None:
@@ -58,26 +41,6 @@ def test_to_tle_updates_maps_outputs_with_tle() -> None:
     assert updates[1].satellite_id == "67890"
     assert updates[1].satellite_name == "MockSat-2"
     assert updates[1].tle is not None
-
-
-def test_to_tle_updates_skips_outputs_without_tle() -> None:
-    outputs = [
-        create_celestrak_output(
-            satellite_id="12345",
-            satellite_name="MockSat-1",
-            tle=create_tle(),
-        ),
-        create_celestrak_output(
-            satellite_id="67890",
-            satellite_name="MockSat-2",
-            tle=None,
-        ),
-    ]
-
-    updates = SatelliteCatalogService._to_tle_updates(outputs)
-
-    assert len(updates) == 1
-    assert updates[0].satellite_id == "12345"
 
 
 def test_update_satellite_catalog_with_tle_data_calls_repo_with_mapped_updates() -> None:

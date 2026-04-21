@@ -1,4 +1,3 @@
-from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -13,28 +12,6 @@ def celestrak_outputs():
         create_celestrak_output(satellite_id="12345", satellite_name="MockSat-1"),
         create_celestrak_output(satellite_id="67890", satellite_name="MockSat-2"),
     ]
-
-
-def test_get_satellite_data_from_db_calls_find_with_expected_query() -> None:
-    mock_collection = MagicMock()
-    mock_cursor = MagicMock()
-    mock_cursor.limit.return_value = [{"satellite_id": "12345"}]
-    mock_collection.find.return_value = mock_cursor
-
-    repository = SatelliteCatalogRepository(collection=mock_collection)
-
-    latitude = 60.0
-    longitude = 24.0
-    timestamp = datetime(2026, 2, 25, 0, 0, tzinfo=UTC)
-
-    result = repository.get_satellite_data_from_db(latitude, longitude, timestamp)
-
-    mock_collection.find.assert_called_once_with(
-        {},
-        projection={"_id": 0, "satellite_id": 1, "satellite_name": 1},
-    )
-    mock_cursor.limit.assert_called_once_with(10)
-    assert result == [{"satellite_id": "12345"}]
 
 
 def test_upsert_tles_to_db_builds_updateone_with_expected_fields() -> None:

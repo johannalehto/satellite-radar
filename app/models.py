@@ -3,21 +3,6 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
-class Satellite(BaseModel):
-    id: int
-    name: str
-
-
-class SatellitesNowResponse(BaseModel):
-    location: tuple[float, float]
-    satellites: list[Satellite]
-
-
-class SatellitesAboveResponse(BaseModel):
-    location: tuple[float, float]
-    satellites: list[Satellite]
-
-
 class TLEParsed(BaseModel):
     epoch: datetime
     inclination_deg: float
@@ -45,7 +30,7 @@ class RawTLEEntry(BaseModel):
 class CelestrakSatelliteOutput(BaseModel):
     satellite_id: str
     satellite_name: str
-    tle: TLEData | None = None
+    tle: TLEData
 
 
 class SatelliteTLEUpdate(BaseModel):
@@ -57,4 +42,24 @@ class SatelliteTLEUpdate(BaseModel):
 class SatelliteCatalogItem(BaseModel):
     satellite_id: str
     satellite_name: str
-    tle: TLEData | None = None
+    tle: TLEData
+
+
+"""
+RADAR MODELS
+"""
+
+
+class RadarTrackPoint(BaseModel):
+    timestamp: datetime
+    azimuth_deg: float
+    elevation_deg: float
+    distance_km: float
+
+
+class RadarSatelliteResult(BaseModel):
+    satellite_id: str
+    satellite_name: str
+    visible_now: bool
+    max_elevation_deg: float
+    track: list[RadarTrackPoint]
