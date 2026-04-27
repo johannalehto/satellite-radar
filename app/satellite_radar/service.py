@@ -8,6 +8,7 @@ from app.satellite_catalog.service import SatelliteCatalogService
 DEFAULT_MINUTES_AHEAD = 20
 DEFAULT_STEP_SECONDS = 30
 DEFAULT_SATELLITE_LIMIT = 10
+MIN_VISIBLE_ELEVATION_DEGREE = 10.0
 
 
 class SatelliteRadarService:
@@ -61,15 +62,19 @@ class SatelliteRadarService:
 
     @staticmethod
     def is_satellite_visible(track: list[RadarTrackPoint]) -> bool:
-        return any(point.elevation_deg > 0 for point in track)
+        return any(point.elevation_deg >= MIN_VISIBLE_ELEVATION_DEGREE for point in track)
 
     @staticmethod
     def is_satellite_visible_now(track: list[RadarTrackPoint]) -> bool:
-        return bool(track) and track[0].elevation_deg > 0
+        return bool(track) and track[0].elevation_deg >= MIN_VISIBLE_ELEVATION_DEGREE
 
     @staticmethod
     def get_max_elevation(track: list[RadarTrackPoint]) -> float:
         return max(point.elevation_deg for point in track)
+
+    @staticmethod
+    def get_visible_track(track: list[RadarTrackPoint]) -> list[RadarTrackPoint]:
+        return [point for point in track if point.elevation_deg >= MIN_VISIBLE_ELEVATION_DEGREE]
 
     def get_visible_satellites(
         self,
@@ -98,7 +103,9 @@ class SatelliteRadarService:
                 step_seconds=step_seconds,
             )
 
-            if not self.is_satellite_visible(track):
+            visible_track = self.get_visible_track(track)
+
+            if not visible_track:
                 continue
 
             visible_satellites.append(
@@ -107,7 +114,7 @@ class SatelliteRadarService:
                     satellite_name=item.satellite_name,
                     visible_now=self.is_satellite_visible_now(track),
                     max_elevation_deg=self.get_max_elevation(track),
-                    track=track,
+                    track=visible_track,
                 )
             )
 
