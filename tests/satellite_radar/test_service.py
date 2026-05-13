@@ -14,7 +14,8 @@ def test_get_visible_satellites_returns_results() -> None:
     results = service.get_visible_satellites(
         lat=60.1699,
         lon=24.9384,
-        minutes_ahead=5,
+        minutes_before=5,
+        minutes_after=5,
         step_seconds=60,
         now=datetime(2026, 3, 25, 12, 0, tzinfo=UTC),
     )
@@ -37,7 +38,8 @@ def test_get_visible_satellites_returns_radar_results() -> None:
     results = service.get_visible_satellites(
         lat=60.1699,
         lon=24.9384,
-        minutes_ahead=5,
+        minutes_before=5,
+        minutes_after=5,
         step_seconds=60,
         now=datetime(2026, 3, 25, 12, 0, tzinfo=UTC),
     )

@@ -60,6 +60,7 @@ class RadarTrackPoint(BaseModel):
 class RadarSatelliteResult(BaseModel):
     satellite_id: str
     satellite_name: str
-    visible_now: bool
+    visible_from: datetime
+    visible_until: datetime
     max_elevation_deg: float
     track: list[RadarTrackPoint]

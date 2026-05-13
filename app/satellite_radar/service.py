@@ -5,7 +5,8 @@ from skyfield.api import EarthSatellite, wgs84
 from app.models import RadarSatelliteResult, RadarTrackPoint, SatelliteCatalogItem
 from app.satellite_catalog.service import SatelliteCatalogService
 
-DEFAULT_MINUTES_AHEAD = 20
+DEFAULT_MINUTES_BEFORE = 5
+DEFAULT_MINUTES_AFTER = 5
 DEFAULT_STEP_SECONDS = 30
 DEFAULT_SATELLITE_LIMIT = 10
 MIN_VISIBLE_ELEVATION_DEGREE = 10.0
@@ -30,7 +31,7 @@ class SatelliteRadarService:
         observer_lat: float,
         observer_lon: float,
         start_time: datetime,
-        minutes_ahead: int,
+        total_minutes: int,
         step_seconds: int,
     ) -> list[RadarTrackPoint]:
         if start_time.tzinfo is None:
@@ -40,7 +41,7 @@ class SatelliteRadarService:
         observer = wgs84.latlon(observer_lat, observer_lon)
 
         points: list[RadarTrackPoint] = []
-        total_steps = (minutes_ahead * 60) // step_seconds + 1
+        total_steps = (total_minutes * 60) // step_seconds + 1
 
         for step in range(total_steps):
             point_time = start_time + timedelta(seconds=step * step_seconds)
@@ -65,10 +66,6 @@ class SatelliteRadarService:
         return any(point.elevation_deg >= MIN_VISIBLE_ELEVATION_DEGREE for point in track)
 
     @staticmethod
-    def is_satellite_visible_now(track: list[RadarTrackPoint]) -> bool:
-        return bool(track) and track[0].elevation_deg >= MIN_VISIBLE_ELEVATION_DEGREE
-
-    @staticmethod
     def get_max_elevation(track: list[RadarTrackPoint]) -> float:
         return max(point.elevation_deg for point in track)
 
@@ -81,15 +78,18 @@ class SatelliteRadarService:
         lat: float,
         lon: float,
         *,
-        minutes_ahead: int = DEFAULT_MINUTES_AHEAD,
+        minutes_before: int = DEFAULT_MINUTES_BEFORE,
+        minutes_after: int = DEFAULT_MINUTES_AFTER,
         step_seconds: int = DEFAULT_STEP_SECONDS,
         limit: int | None = DEFAULT_SATELLITE_LIMIT,
         now: datetime | None = None,
     ) -> list[RadarSatelliteResult]:
         now = now or datetime.now(UTC)
 
-        catalog_items = self.satellite_catalog.get_all_satellites()
+        start_time = now - timedelta(minutes=minutes_before)
+        total_minutes = minutes_before + minutes_after
 
+        catalog_items = self.satellite_catalog.get_all_satellites()
         visible_satellites: list[RadarSatelliteResult] = []
 
         for item in catalog_items:
@@ -98,8 +98,8 @@ class SatelliteRadarService:
                 satellite,
                 observer_lat=lat,
                 observer_lon=lon,
-                start_time=now,
-                minutes_ahead=minutes_ahead,
+                start_time=start_time,
+                total_minutes=total_minutes,
                 step_seconds=step_seconds,
             )
 
@@ -112,11 +112,14 @@ class SatelliteRadarService:
                 RadarSatelliteResult(
                     satellite_id=item.satellite_id,
                     satellite_name=item.satellite_name,
-                    visible_now=self.is_satellite_visible_now(track),
-                    max_elevation_deg=self.get_max_elevation(track),
+                    visible_from=visible_track[0].timestamp,
+                    visible_until=visible_track[-1].timestamp,
+                    max_elevation_deg=self.get_max_elevation(visible_track),
                     track=visible_track,
                 )
             )
+
+        visible_satellites.sort(key=lambda s: (not s.visible_from, s.visible_until))
 
         if limit is not None:
             return visible_satellites[:limit]
