@@ -1,0 +1,236 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Satellites Now</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0b0b10;
+      color: #f4f4f5;
+      padding: 16px;
+    }
+
+    button {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 0;
+      font-size: 16px;
+    }
+
+    section {
+      margin-top: 24px;
+    }
+
+    .card {
+      background: #18181f;
+      border: 1px solid #33333d;
+      border-radius: 14px;
+      padding: 14px;
+      margin: 10px 0;
+    }
+
+    .muted {
+      color: #a1a1aa;
+      font-size: 14px;
+    }
+
+    .name {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .badge {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #27272f;
+    }
+  </style>
+</head>
+<body>
+  <h1>Satellites Now</h1>
+
+  <button onclick="loadSatellites()">Use my location</button>
+  <p id="status" class="muted"></p>
+
+  <section>
+    <h2>Visible now</h2>
+    <div id="visible-now"></div>
+  </section>
+
+  <section>
+    <h2>Approaching</h2>
+    <div id="approaching"></div>
+  </section>
+
+  <section>
+    <h2>Recently passed</h2>
+    <div id="passed"></div>
+  </section>
+
+  <script>
+    const API_BASE = "https://satellite-radar.fly.dev";
+
+    let latestData = [];
+    let currentCoords = null;
+
+    async function refreshSatellites() {
+      if (!currentCoords) return;
+
+      latestData = await fetchSatellites(
+        currentCoords.latitude,
+        currentCoords.longitude
+      );
+
+      render(latestData);
+    }
+
+    function formatTime(iso) {
+      return new Date(iso).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+    }
+
+    function formatDuration(ms) {
+      const seconds = Math.max(0, Math.round(ms / 1000));
+      const minutes = Math.floor(seconds / 60);
+      const rest = seconds % 60;
+      return `${minutes}:${String(rest).padStart(2, "0")}`;
+    }
+
+    function getStatus(pass, now) {
+      const from = new Date(pass.visible_from);
+      const until = new Date(pass.visible_until);
+
+      if (now < from) return "approaching";
+      if (now <= until) return "visible-now";
+      return "passed";
+    }
+
+    function renderPass(pass, now) {
+      const from = new Date(pass.visible_from);
+      const until = new Date(pass.visible_until);
+      const status = getStatus(pass, now);
+
+      let badgeText = "";
+
+      if (status === "approaching") {
+        badgeText = `in ${formatDuration(from - now)}`;
+      } else if (status === "visible-now") {
+        badgeText = `visible for ${formatDuration(until - now)}`;
+      } else {
+        badgeText = `passed ${formatDuration(now - until)} ago`;
+      }
+
+      return `
+        <div class="card">
+          <div class="name">${pass.satellite_name}</div>
+          <div class="muted">ID: ${pass.satellite_id}</div>
+          <div>Max elevation: ${pass.max_elevation_deg.toFixed(1)}°</div>
+          <div class="muted">
+            ${formatTime(pass.visible_from)} → ${formatTime(pass.visible_until)}
+          </div>
+          <div class="badge">${badgeText}</div>
+        </div>
+      `;
+    }
+
+    function render(data) {
+      const now = new Date();
+
+      const groups = {
+        "visible-now": [],
+        approaching: [],
+        passed: [],
+      };
+
+      for (const pass of data) {
+        groups[getStatus(pass, now)].push(pass);
+      }
+
+      groups["visible-now"].sort((a, b) => b.max_elevation_deg - a.max_elevation_deg);
+      groups.approaching.sort((a, b) => new Date(a.visible_from) - new Date(b.visible_from));
+      groups.passed.sort((a, b) => new Date(b.visible_until) - new Date(a.visible_until));
+
+      document.getElementById("visible-now").innerHTML =
+        groups["visible-now"].map(pass => renderPass(pass, now)).join("") || "<p class='muted'>None</p>";
+
+      document.getElementById("approaching").innerHTML =
+        groups.approaching.map(pass => renderPass(pass, now)).join("") || "<p class='muted'>None</p>";
+
+      document.getElementById("passed").innerHTML =
+        groups.passed.map(pass => renderPass(pass, now)).join("") || "<p class='muted'>None</p>";
+    }
+
+    async function fetchSatellites(lat, lon) {
+      const response = await fetch(`${API_BASE}/satellite_radar/get_visible_satellites/${lat}/${lon}`);
+
+      if (!response.ok) {
+        throw new Error(`Request failed: ${response.status}`);
+      }
+
+      return response.json();
+    }
+
+    async function getLocationName(lat, lon) {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`
+      );
+
+      const data = await res.json();
+      const addr = data.address || {};
+
+      const area =
+        addr.suburb ||    // e.g. Koenji
+        addr.neighbourhood ||
+        addr.city_district;
+
+      const city =
+        addr.city ||
+        addr.town;
+
+      const country = addr.country;
+
+      if (area && city) {
+        return `${area}, ${city}`;
+      }
+
+      if (city && country) {
+        return `${city}, ${country}`;
+      }
+
+      return data.display_name;
+    }
+
+    function loadSatellites() {
+      document.getElementById("status").textContent = "Getting location...";
+
+      navigator.geolocation.getCurrentPosition(
+              async (position) => {
+                const {latitude, longitude} = position.coords;
+
+                currentCoords = {latitude, longitude};
+
+                const placeName = await getLocationName(latitude, longitude);
+
+                document.getElementById("status").textContent =
+                  `Location: ${placeName} (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+
+                await refreshSatellites();
+
+                setInterval(() => render(latestData), 1000);
+                setInterval(refreshSatellites, 60000);
+              },
+              (error) => {
+                document.getElementById("status").textContent = error.message;
+              }
+      );
+    }
+  </script>
+</body>
+</html>
