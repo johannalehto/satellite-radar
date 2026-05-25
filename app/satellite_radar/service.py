@@ -70,6 +70,21 @@ class SatelliteRadarService:
         return max(point.elevation_deg for point in track)
 
     @staticmethod
+    def azimuth_to_direction(azimuth_deg: float) -> str:
+        directions = [
+            "N",
+            "NE",
+            "E",
+            "SE",
+            "S",
+            "SW",
+            "W",
+            "NW",
+        ]
+        index = round(azimuth_deg / 45) % 8
+        return directions[index]
+
+    @staticmethod
     def get_visible_track(track: list[RadarTrackPoint]) -> list[RadarTrackPoint]:
         return [point for point in track if point.elevation_deg >= MIN_VISIBLE_ELEVATION_DEGREE]
 
@@ -108,6 +123,9 @@ class SatelliteRadarService:
             if not visible_track:
                 continue
 
+            start_azimuth_deg = visible_track[0].azimuth_deg
+            end_azimuth_deg = visible_track[-1].azimuth_deg
+
             visible_satellites.append(
                 RadarSatelliteResult(
                     satellite_id=item.satellite_id,
@@ -115,6 +133,10 @@ class SatelliteRadarService:
                     visible_from=visible_track[0].timestamp,
                     visible_until=visible_track[-1].timestamp,
                     max_elevation_deg=self.get_max_elevation(visible_track),
+                    start_azimuth_deg=start_azimuth_deg,
+                    start_direction=self.azimuth_to_direction(start_azimuth_deg),
+                    end_azimuth_deg=end_azimuth_deg,
+                    end_direction=self.azimuth_to_direction(end_azimuth_deg),
                     track=visible_track,
                 )
             )

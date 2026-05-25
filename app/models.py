@@ -63,4 +63,8 @@ class RadarSatelliteResult(BaseModel):
     visible_from: datetime
     visible_until: datetime
     max_elevation_deg: float
+    start_azimuth_deg: float
+    start_direction: str
+    end_azimuth_deg: float
+    end_direction: str
     track: list[RadarTrackPoint]

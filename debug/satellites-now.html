@@ -26,27 +26,55 @@
     .card {
       background: #18181f;
       border: 1px solid #33333d;
-      border-radius: 14px;
-      padding: 14px;
-      margin: 10px 0;
+      border-radius: 18px;
+      padding: 18px;
+      margin: 12px 0;
     }
 
-    .muted {
-      color: #a1a1aa;
-      font-size: 14px;
+    .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
     }
 
     .name {
-      font-size: 18px;
-      font-weight: 700;
+      font-size: 20px;
+      font-weight: 750;
+      line-height: 1.1;
     }
 
     .badge {
-      display: inline-block;
-      margin-top: 8px;
-      padding: 4px 8px;
+      padding: 6px 10px;
       border-radius: 999px;
       background: #27272f;
+      font-size: 14px;
+      white-space: nowrap;
+      color: #f4f4f5;
+    }
+
+    .direction-row {
+      margin-top: 16px;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .arrow {
+      color: #a1a1aa;
+      font-weight: 500;
+    }
+
+    .meta-row {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+      color: #a1a1aa;
+      font-size: 15px;
     }
   </style>
 </head>
@@ -72,10 +100,17 @@
   </section>
 
   <script>
-    const API_BASE = "https://satellite-radar.fly.dev";
+    const API_BASE =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1"
+        ? "http://localhost:8000"
+        : "https://satellite-radar.fly.dev";
 
     let latestData = [];
     let currentCoords = null;
+
+    let renderIntervalId = null;
+    let refreshIntervalId = null;
 
     async function refreshSatellites() {
       if (!currentCoords) return;
@@ -116,6 +151,11 @@
       const from = new Date(pass.visible_from);
       const until = new Date(pass.visible_until);
       const status = getStatus(pass, now);
+      const currentPoint = getCurrentTrackPoint(pass, now);
+      const currentElevationText =
+        currentPoint && status === "visible-now"
+          ? `${currentPoint.elevation_deg.toFixed(1)}°`
+          : "—";
 
       let badgeText = "";
 
@@ -127,15 +167,40 @@
         badgeText = `passed ${formatDuration(now - until)} ago`;
       }
 
+      function getCurrentTrackPoint(pass, now) {
+        if (!pass.track || pass.track.length === 0) return null;
+
+        return pass.track.reduce((closest, point) => {
+          const pointTime = new Date(point.timestamp);
+          const closestTime = new Date(closest.timestamp);
+
+          return Math.abs(pointTime - now) < Math.abs(closestTime - now)
+            ? point
+            : closest;
+        });
+      }
+
       return `
         <div class="card">
-          <div class="name">${pass.satellite_name}</div>
-          <div class="muted">ID: ${pass.satellite_id}</div>
-          <div>Max elevation: ${pass.max_elevation_deg.toFixed(1)}°</div>
-          <div class="muted">
-            ${formatTime(pass.visible_from)} → ${formatTime(pass.visible_until)}
+          <div class="top-row">
+            <div>
+              <div class="name">${pass.satellite_name}</div>
+              <div class="muted">ID ${pass.satellite_id}</div>
+            </div>
+            <div class="badge">${badgeText}</div>
           </div>
-          <div class="badge">${badgeText}</div>
+
+          <div class="direction-row">
+            <span>${pass.start_direction}</span>
+            <span class="arrow">→</span>
+            <span>${pass.end_direction}</span>
+          </div>
+
+          <div class="meta-row">
+            <span>now ${currentElevationText}</span>
+            <span>max ${pass.max_elevation_deg.toFixed(1)}°</span>
+            <span>${formatTime(pass.visible_from)}–${formatTime(pass.visible_until)}</span>
+          </div>
         </div>
       `;
     }
@@ -223,8 +288,11 @@
 
                 await refreshSatellites();
 
-                setInterval(() => render(latestData), 1000);
-                setInterval(refreshSatellites, 60000);
+                if (renderIntervalId) clearInterval(renderIntervalId);
+                if (refreshIntervalId) clearInterval(refreshIntervalId);
+
+                renderIntervalId = setInterval(() => render(latestData), 1000);
+                refreshIntervalId = setInterval(refreshSatellites, 120000);
               },
               (error) => {
                 document.getElementById("status").textContent = error.message;
