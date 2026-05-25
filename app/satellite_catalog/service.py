@@ -14,7 +14,7 @@ class SatelliteCatalogService:
         celestrak_service: CelestrakService | None = None,
         repository: SatelliteCatalogRepository | None = None,
     ):
-        self.celestrak_service = celestrak_service or CelestrakService()
+        self.celestrak_service = celestrak_service
         self.repository = repository or create_satellite_catalog_repository()
 
     @staticmethod
@@ -32,7 +32,9 @@ class SatelliteCatalogService:
         ]
 
     def update_satellite_catalog_with_tle_data(self) -> None:
-        celestrak_outputs = self.celestrak_service.fetch_tles()
+        celestrak_service = self.celestrak_service or CelestrakService()
+        celestrak_outputs = celestrak_service.fetch_tles()
+
         tle_updates = self._to_tle_updates(celestrak_outputs)
         self.repository.upsert_tles_to_db(tle_updates)
 
