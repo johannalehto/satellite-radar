@@ -5,6 +5,8 @@ from skyfield.api import EarthSatellite, load
 
 from app.models import (
     CelestrakSatelliteOutput,
+    RadarSatelliteResult,
+    RadarTrackPoint,
     SatelliteCatalogItem,
     SatelliteTLEUpdate,
     TLEData,
@@ -93,3 +95,43 @@ def create_satellite_catalog_item(**kwargs: Any) -> SatelliteCatalogItem:
     }
     data.update(kwargs)
     return SatelliteCatalogItem(**data)
+
+
+def create_radar_track_point(**kwargs: Any) -> RadarTrackPoint:
+    data = {
+        "timestamp": datetime(2026, 3, 25, 12, 0, tzinfo=UTC),
+        "azimuth_deg": 45.0,
+        "elevation_deg": 20.0,
+        "distance_km": 1000.0,
+    }
+    data.update(kwargs)
+    return RadarTrackPoint(**data)
+
+
+def create_radar_result(**kwargs: Any) -> RadarSatelliteResult:
+    track = kwargs.pop("track", None)
+    visible_from = kwargs.pop("visible_from", None)
+    visible_until = kwargs.pop("visible_until", None)
+
+    default_track = (
+        track
+        if track is not None
+        else [
+            create_radar_track_point(),
+        ]
+    )
+
+    data = {
+        "satellite_id": "12345",
+        "satellite_name": "MockSatellite",
+        "visible_from": visible_from or default_track[0].timestamp,
+        "visible_until": visible_until or default_track[-1].timestamp,
+        "max_elevation_deg": 20.0,
+        "start_azimuth_deg": 45.0,
+        "start_direction": "NE",
+        "end_azimuth_deg": 90.0,
+        "end_direction": "E",
+        "track": default_track,
+    }
+    data.update(kwargs)
+    return RadarSatelliteResult(**data)

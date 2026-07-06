@@ -62,10 +62,6 @@ class SatelliteRadarService:
         return points
 
     @staticmethod
-    def is_satellite_visible(track: list[RadarTrackPoint]) -> bool:
-        return any(point.elevation_deg >= MIN_VISIBLE_ELEVATION_DEGREE for point in track)
-
-    @staticmethod
     def get_max_elevation(track: list[RadarTrackPoint]) -> float:
         return max(point.elevation_deg for point in track)
 
@@ -86,6 +82,7 @@ class SatelliteRadarService:
 
     @staticmethod
     def get_visible_track(track: list[RadarTrackPoint]) -> list[RadarTrackPoint]:
+        # TODO: add sun related visibility filtering
         return [point for point in track if point.elevation_deg >= MIN_VISIBLE_ELEVATION_DEGREE]
 
     def get_visible_satellites(
