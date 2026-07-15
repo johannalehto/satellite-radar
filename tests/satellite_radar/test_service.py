@@ -143,13 +143,13 @@ def test_get_visible_satellites_builds_result_from_visible_track() -> None:
 
     assert len(results) == 1
     r = results[0]
-    assert r.satellite_id == "694"
-    assert r.satellite_name == "ATLAS CENTAUR 2"
-    assert r.visible_from == visible_from
-    assert r.visible_until == visible_until
-    assert r.max_elevation_deg == 30.0
-    assert r.start_direction == "NE"
-    assert r.end_direction == "E"
+    assert r.info.satellite_id == "694"
+    assert r.info.satellite_name == "ATLAS CENTAUR 2"
+    assert r.visibility.visible_from == visible_from
+    assert r.visibility.visible_until == visible_until
+    assert r.visibility.max_elevation_deg == 30.0
+    assert r.start.direction == "NE"
+    assert r.end.direction == "E"
     assert r.track == track
 
 

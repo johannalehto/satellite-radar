@@ -5,10 +5,13 @@ from skyfield.api import EarthSatellite, load
 
 from app.models import (
     CelestrakSatelliteOutput,
-    RadarSatelliteResult,
     RadarTrackPoint,
     SatelliteCatalogItem,
+    SatelliteInfo,
+    SatellitePassPoint,
+    SatelliteRadarItem,
     SatelliteTLEUpdate,
+    SatelliteVisibility,
     TLEData,
     TLEParsed,
 )
@@ -108,10 +111,12 @@ def create_radar_track_point(**kwargs: Any) -> RadarTrackPoint:
     return RadarTrackPoint(**data)
 
 
-def create_radar_result(**kwargs: Any) -> RadarSatelliteResult:
+def create_radar_result(**kwargs: Any) -> SatelliteRadarItem:
     track = kwargs.pop("track", None)
-    visible_from = kwargs.pop("visible_from", None)
-    visible_until = kwargs.pop("visible_until", None)
+    info = kwargs.pop("info", None)
+    visibility = kwargs.pop("visibility", None)
+    start = kwargs.pop("start", None)
+    end = kwargs.pop("end", None)
 
     default_track = (
         track
@@ -122,16 +127,40 @@ def create_radar_result(**kwargs: Any) -> RadarSatelliteResult:
     )
 
     data = {
-        "satellite_id": "12345",
-        "satellite_name": "MockSatellite",
-        "visible_from": visible_from or default_track[0].timestamp,
-        "visible_until": visible_until or default_track[-1].timestamp,
-        "max_elevation_deg": 20.0,
-        "start_azimuth_deg": 45.0,
-        "start_direction": "NE",
-        "end_azimuth_deg": 90.0,
-        "end_direction": "E",
+        "info": (
+            info
+            if info is not None
+            else SatelliteInfo(
+                satellite_id="12345",
+                satellite_name="MockSatellite",
+            )
+        ),
+        "visibility": (
+            visibility
+            if visibility is not None
+            else SatelliteVisibility(
+                visible_from=default_track[0].timestamp,
+                visible_until=default_track[-1].timestamp,
+                max_elevation_deg=20.0,
+            )
+        ),
+        "start": (
+            start
+            if start is not None
+            else SatellitePassPoint(
+                azimuth_deg=45.0,
+                direction="NE",
+            )
+        ),
+        "end": (
+            end
+            if end is not None
+            else SatellitePassPoint(
+                azimuth_deg=90.0,
+                direction="E",
+            )
+        ),
         "track": default_track,
     }
     data.update(kwargs)
-    return RadarSatelliteResult(**data)
+    return SatelliteRadarItem(**data)

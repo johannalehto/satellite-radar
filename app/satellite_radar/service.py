@@ -2,7 +2,14 @@ from datetime import UTC, datetime, timedelta
 
 from skyfield.api import EarthSatellite, wgs84
 
-from app.models import RadarSatelliteResult, RadarTrackPoint, SatelliteCatalogItem
+from app.models import (
+    RadarTrackPoint,
+    SatelliteCatalogItem,
+    SatelliteInfo,
+    SatellitePassPoint,
+    SatelliteRadarItem,
+    SatelliteVisibility,
+)
 from app.satellite_catalog.service import SatelliteCatalogService
 
 DEFAULT_MINUTES_BEFORE = 5
@@ -95,14 +102,14 @@ class SatelliteRadarService:
         step_seconds: int = DEFAULT_STEP_SECONDS,
         limit: int | None = DEFAULT_SATELLITE_LIMIT,
         now: datetime | None = None,
-    ) -> list[RadarSatelliteResult]:
+    ) -> list[SatelliteRadarItem]:
         now = now or datetime.now(UTC)
 
         start_time = now - timedelta(minutes=minutes_before)
         total_minutes = minutes_before + minutes_after
 
         catalog_items = self.satellite_catalog.get_all_satellites()
-        visible_satellites: list[RadarSatelliteResult] = []
+        visible_satellites: list[SatelliteRadarItem] = []
 
         for item in catalog_items:
             satellite = self.build_earth_satellite(item)
@@ -124,21 +131,31 @@ class SatelliteRadarService:
             end_azimuth_deg = visible_track[-1].azimuth_deg
 
             visible_satellites.append(
-                RadarSatelliteResult(
-                    satellite_id=item.satellite_id,
-                    satellite_name=item.satellite_name,
-                    visible_from=visible_track[0].timestamp,
-                    visible_until=visible_track[-1].timestamp,
-                    max_elevation_deg=self.get_max_elevation(visible_track),
-                    start_azimuth_deg=start_azimuth_deg,
-                    start_direction=self.azimuth_to_direction(start_azimuth_deg),
-                    end_azimuth_deg=end_azimuth_deg,
-                    end_direction=self.azimuth_to_direction(end_azimuth_deg),
+                SatelliteRadarItem(
+                    info=SatelliteInfo(
+                        satellite_id=item.satellite_id,
+                        satellite_name=item.satellite_name,
+                    ),
+                    visibility=SatelliteVisibility(
+                        visible_from=visible_track[0].timestamp,
+                        visible_until=visible_track[-1].timestamp,
+                        max_elevation_deg=self.get_max_elevation(visible_track),
+                    ),
+                    start=SatellitePassPoint(
+                        azimuth_deg=start_azimuth_deg,
+                        direction=self.azimuth_to_direction(start_azimuth_deg),
+                    ),
+                    end=SatellitePassPoint(
+                        azimuth_deg=end_azimuth_deg,
+                        direction=self.azimuth_to_direction(end_azimuth_deg),
+                    ),
                     track=visible_track,
                 )
             )
 
-        visible_satellites.sort(key=lambda s: (not s.visible_from, s.visible_until))
+        visible_satellites.sort(
+            key=lambda s: (not s.visibility.visible_from, s.visibility.visible_until)
+        )
 
         if limit is not None:
             return visible_satellites[:limit]

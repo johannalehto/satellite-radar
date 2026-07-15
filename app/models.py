@@ -57,14 +57,27 @@ class RadarTrackPoint(BaseModel):
     distance_km: float
 
 
-class RadarSatelliteResult(BaseModel):
+class SatelliteInfo(BaseModel):
     satellite_id: str
     satellite_name: str
+    country: str | None = None
+    info_text: str | None = None
+
+
+class SatelliteVisibility(BaseModel):
     visible_from: datetime
     visible_until: datetime
     max_elevation_deg: float
-    start_azimuth_deg: float
-    start_direction: str
-    end_azimuth_deg: float
-    end_direction: str
+
+
+class SatellitePassPoint(BaseModel):
+    azimuth_deg: float
+    direction: str
+
+
+class SatelliteRadarItem(BaseModel):
+    info: SatelliteInfo
+    visibility: SatelliteVisibility
+    start: SatellitePassPoint
+    end: SatellitePassPoint
     track: list[RadarTrackPoint]

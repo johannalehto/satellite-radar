@@ -1,7 +1,26 @@
 
 Test response for web
 ```bash
-satellite_name: str
+info:
+  satellite_id: str
+  satellite_name: str
+  country: str | None
+  info_text: str | None
+
+visibility:
+  visible_from: datetime
+  visible_until: datetime
+  max_elevation_deg: float
+
+start:
+  azimuth_deg: float
+  direction: str
+
+end:
+  azimuth_deg: float
+  direction: str
+
+track: list[RadarTrackPoint]
 
 ```
 
