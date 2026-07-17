@@ -1,3 +1,4 @@
+import logging
 from datetime import UTC, datetime, timedelta
 from typing import Final
 
@@ -12,6 +13,9 @@ from app.models import (
     SatelliteVisibility,
 )
 from app.satellite_catalog.service import SatelliteCatalogService
+from app.satellite_radar.errors import SatelliteRadarCatalogUnavailableError
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_MINUTES_BEFORE: Final[int] = 5
 DEFAULT_MINUTES_AFTER: Final[int] = 5
@@ -93,6 +97,55 @@ class SatelliteRadarService:
         # TODO: add sun related visibility filtering
         return [point for point in track if point.elevation_deg >= MIN_VISIBLE_ELEVATION_DEGREES]
 
+    def _build_satellite_radar_item(
+        self,
+        item: SatelliteCatalogItem,
+        *,
+        lat: float,
+        lon: float,
+        start_time: datetime,
+        total_minutes: int,
+        step_seconds: int,
+    ) -> SatelliteRadarItem | None:
+        satellite = self.build_earth_satellite(item)
+        track = self.calculate_satellite_track(
+            satellite,
+            observer_lat=lat,
+            observer_lon=lon,
+            start_time=start_time,
+            total_minutes=total_minutes,
+            step_seconds=step_seconds,
+        )
+
+        visible_track = self.get_visible_track(track)
+
+        if not visible_track:
+            return None
+
+        start_azimuth_deg = visible_track[0].azimuth_deg
+        end_azimuth_deg = visible_track[-1].azimuth_deg
+
+        return SatelliteRadarItem(
+            info=SatelliteInfo(
+                satellite_id=item.satellite_id,
+                satellite_name=item.satellite_name,
+            ),
+            visibility=SatelliteVisibility(
+                visible_from=visible_track[0].timestamp,
+                visible_until=visible_track[-1].timestamp,
+                max_elevation_deg=self.get_max_elevation(visible_track),
+            ),
+            start=SatellitePassPoint(
+                azimuth_deg=start_azimuth_deg,
+                direction=self.azimuth_to_direction(start_azimuth_deg),
+            ),
+            end=SatellitePassPoint(
+                azimuth_deg=end_azimuth_deg,
+                direction=self.azimuth_to_direction(end_azimuth_deg),
+            ),
+            track=visible_track,
+        )
+
     def get_visible_satellites(
         self,
         lat: float,
@@ -109,50 +162,36 @@ class SatelliteRadarService:
         start_time = now - timedelta(minutes=minutes_before)
         total_minutes = minutes_before + minutes_after
 
-        catalog_items = self.satellite_catalog.get_all_satellites()
+        try:
+            catalog_items = self.satellite_catalog.get_all_satellites()
+        except Exception as e:  # noqa: BLE001
+            raise SatelliteRadarCatalogUnavailableError(
+                "Could not retrieve satellite catalog"
+            ) from e
+
         visible_satellites: list[SatelliteRadarItem] = []
 
         for item in catalog_items:
-            satellite = self.build_earth_satellite(item)
-            track = self.calculate_satellite_track(
-                satellite,
-                observer_lat=lat,
-                observer_lon=lon,
-                start_time=start_time,
-                total_minutes=total_minutes,
-                step_seconds=step_seconds,
-            )
-
-            visible_track = self.get_visible_track(track)
-
-            if not visible_track:
+            try:
+                radar_item = self._build_satellite_radar_item(
+                    item,
+                    lat=lat,
+                    lon=lon,
+                    start_time=start_time,
+                    total_minutes=total_minutes,
+                    step_seconds=step_seconds,
+                )
+            except Exception:  # noqa: BLE001
+                logger.exception(
+                    "Skipping satellite %s because radar calculation failed",
+                    item.satellite_id,
+                )
                 continue
 
-            start_azimuth_deg = visible_track[0].azimuth_deg
-            end_azimuth_deg = visible_track[-1].azimuth_deg
+            if radar_item is None:
+                continue
 
-            visible_satellites.append(
-                SatelliteRadarItem(
-                    info=SatelliteInfo(
-                        satellite_id=item.satellite_id,
-                        satellite_name=item.satellite_name,
-                    ),
-                    visibility=SatelliteVisibility(
-                        visible_from=visible_track[0].timestamp,
-                        visible_until=visible_track[-1].timestamp,
-                        max_elevation_deg=self.get_max_elevation(visible_track),
-                    ),
-                    start=SatellitePassPoint(
-                        azimuth_deg=start_azimuth_deg,
-                        direction=self.azimuth_to_direction(start_azimuth_deg),
-                    ),
-                    end=SatellitePassPoint(
-                        azimuth_deg=end_azimuth_deg,
-                        direction=self.azimuth_to_direction(end_azimuth_deg),
-                    ),
-                    track=visible_track,
-                )
-            )
+            visible_satellites.append(radar_item)
 
         visible_satellites.sort(
             key=lambda s: (not s.visibility.visible_from, s.visibility.visible_until)
