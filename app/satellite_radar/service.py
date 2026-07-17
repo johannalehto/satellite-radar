@@ -154,7 +154,7 @@ class SatelliteRadarService:
         minutes_before: int = DEFAULT_MINUTES_BEFORE,
         minutes_after: int = DEFAULT_MINUTES_AFTER,
         step_seconds: int = DEFAULT_STEP_SECONDS,
-        limit: int | None = DEFAULT_SATELLITE_LIMIT,
+        limit: int = DEFAULT_SATELLITE_LIMIT,
         now: datetime | None = None,
     ) -> list[SatelliteRadarItem]:
         now = now or datetime.now(UTC)
@@ -193,11 +193,9 @@ class SatelliteRadarService:
 
             visible_satellites.append(radar_item)
 
-        visible_satellites.sort(
-            key=lambda s: (not s.visibility.visible_from, s.visibility.visible_until)
+        sorted_satellites = sorted(
+            visible_satellites,
+            key=lambda satellite: satellite.visibility.visible_until,
         )
 
-        if limit is not None:
-            return visible_satellites[:limit]
-
-        return visible_satellites
+        return sorted_satellites[:limit]
