@@ -238,6 +238,33 @@
         groups.passed.map(pass => renderPass(pass, now)).join("") || "<p class='muted'>None</p>";
     }
 
+    function normalizePass(pass) {
+      if (pass.info && pass.visibility && pass.start && pass.end) {
+        return pass;
+      }
+
+      return {
+        info: {
+          satellite_id: pass.satellite_id,
+          satellite_name: pass.satellite_name,
+        },
+        visibility: {
+          visible_from: pass.visible_from,
+          visible_until: pass.visible_until,
+          max_elevation_deg: pass.max_elevation_deg,
+        },
+        start: {
+          azimuth_deg: pass.start_azimuth_deg,
+          direction: pass.start_direction,
+        },
+        end: {
+          azimuth_deg: pass.end_azimuth_deg,
+          direction: pass.end_direction,
+        },
+        track: pass.track || [],
+      };
+    }
+
     async function fetchSatellites(lat, lon) {
       const response = await fetch(`${API_BASE}/satellite_radar/get_visible_satellites/${lat}/${lon}`);
 
@@ -245,7 +272,8 @@
         throw new Error(`Request failed: ${response.status}`);
       }
 
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data.map(normalizePass) : [];
     }
 
     async function getLocationName(lat, lon) {
