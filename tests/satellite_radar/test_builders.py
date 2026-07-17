@@ -1,7 +1,13 @@
+from datetime import UTC, datetime, timedelta
+
 import pytest
 
-from app.satellite_radar.builders import azimuth_to_direction, get_max_elevation
-from tests.factory import create_radar_track_point
+from app.satellite_radar.builders import (
+    azimuth_to_direction,
+    build_satellite_radar_item,
+    get_max_elevation,
+)
+from tests.factory import create_radar_track_point, create_satellite_catalog_item
 
 
 def test_get_max_elevation_returns_highest_elevation() -> None:
@@ -12,6 +18,41 @@ def test_get_max_elevation_returns_highest_elevation() -> None:
     ]
 
     assert get_max_elevation(track) == 35.0
+
+
+def test_build_satellite_radar_item_builds_nested_response() -> None:
+    visible_from = datetime(2026, 3, 25, 12, 0, tzinfo=UTC)
+    visible_until = visible_from + timedelta(minutes=1)
+
+    catalog_item = create_satellite_catalog_item(
+        satellite_id="00694",
+        satellite_name="ATLAS CENTAUR 2",
+    )
+    track = [
+        create_radar_track_point(
+            timestamp=visible_from,
+            azimuth_deg=45.0,
+            elevation_deg=20.0,
+        ),
+        create_radar_track_point(
+            timestamp=visible_until,
+            azimuth_deg=90.0,
+            elevation_deg=30.0,
+        ),
+    ]
+
+    result = build_satellite_radar_item(catalog_item, track)
+
+    assert result.info.satellite_id == "00694"
+    assert result.info.satellite_name == "ATLAS CENTAUR 2"
+    assert result.visibility.visible_from == visible_from
+    assert result.visibility.visible_until == visible_until
+    assert result.visibility.max_elevation_deg == 30.0
+    assert result.start.azimuth_deg == 45.0
+    assert result.start.direction == "NE"
+    assert result.end.azimuth_deg == 90.0
+    assert result.end.direction == "E"
+    assert result.track == track
 
 
 @pytest.mark.parametrize(
