@@ -58,34 +58,6 @@ def test_get_visible_track_filters_points_below_minimum_elevation() -> None:
     assert [p.elevation_deg for p in result] == [10.0, 30.0]
 
 
-def test_get_max_elevation_returns_highest_elevation() -> None:
-    track = [
-        create_radar_track_point(elevation_deg=12.0),
-        create_radar_track_point(elevation_deg=35.0),
-        create_radar_track_point(elevation_deg=20.0),
-    ]
-
-    assert SatelliteRadarService.get_max_elevation(track) == 35.0
-
-
-@pytest.mark.parametrize(
-    ("azimuth_deg", "expected"),
-    [
-        (0.0, "N"),
-        (45.0, "NE"),
-        (90.0, "E"),
-        (135.0, "SE"),
-        (180.0, "S"),
-        (225.0, "SW"),
-        (270.0, "W"),
-        (315.0, "NW"),
-        (360.0, "N"),
-    ],
-)
-def test_azimuth_to_direction(azimuth_deg: float, expected: str) -> None:
-    assert SatelliteRadarService.azimuth_to_direction(azimuth_deg) == expected
-
-
 def test_get_visible_satellites_returns_empty_when_calculation_returns_no_points() -> None:
     catalog_item = create_satellite_catalog_item()
     service = SatelliteRadarService(
