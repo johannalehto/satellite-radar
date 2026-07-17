@@ -1,14 +1,49 @@
-from datetime import UTC, datetime, timedelta, timezone
-from unittest.mock import Mock, patch
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import pytest
 
+from app.models import RadarTrackPoint, SatelliteCatalogItem
+from app.satellite_radar.errors import SatelliteRadarCatalogUnavailableError
 from app.satellite_radar.service import SatelliteRadarService
 from tests.factory import (
-    create_earth_satellite,
     create_radar_track_point,
     create_satellite_catalog_item,
 )
+
+
+class StubSatelliteCatalog:
+    def __init__(self, satellites: list[SatelliteCatalogItem]):
+        self.satellites = satellites
+
+    def get_all_satellites(self) -> list[SatelliteCatalogItem]:
+        return self.satellites
+
+
+class FailingSatelliteCatalog:
+    def get_all_satellites(self) -> list[SatelliteCatalogItem]:
+        raise RuntimeError("database unavailable")
+
+
+class StubSatelliteTrackCalculator:
+    def __init__(self, tracks_by_satellite_id: dict[str, list[RadarTrackPoint]]):
+        self.tracks_by_satellite_id = tracks_by_satellite_id
+
+    def calculate_track(
+        self,
+        catalog_item: SatelliteCatalogItem,
+        **_: Any,
+    ) -> list[RadarTrackPoint]:
+        return self.tracks_by_satellite_id[catalog_item.satellite_id]
+
+
+class FailingSatelliteTrackCalculator:
+    def calculate_track(
+        self,
+        catalog_item: SatelliteCatalogItem,
+        **_: Any,
+    ) -> list[RadarTrackPoint]:
+        raise RuntimeError(f"bad TLE for {catalog_item.satellite_id}")
 
 
 def test_get_visible_track_filters_points_below_minimum_elevation() -> None:
@@ -51,43 +86,26 @@ def test_azimuth_to_direction(azimuth_deg: float, expected: str) -> None:
     assert SatelliteRadarService.azimuth_to_direction(azimuth_deg) == expected
 
 
-def test_calculate_satellite_track_raises_for_naive_start_time() -> None:
-    satellite_catalog = Mock()
-    service = SatelliteRadarService(satellite_catalog=satellite_catalog)
-
-    with pytest.raises(ValueError, match="start_time must be timezone-aware"):
-        service.calculate_satellite_track(
-            Mock(),
-            observer_lat=60.1699,
-            observer_lon=24.9384,
-            start_time=datetime(2026, 3, 25, 12, 0),  # naive
-            total_minutes=10,
-            step_seconds=60,
-        )
-
-
 def test_get_visible_satellites_returns_empty_when_calculation_returns_no_points() -> None:
-    satellite_catalog = Mock()
-    satellite_catalog.get_all_satellites.return_value = [create_satellite_catalog_item()]
+    catalog_item = create_satellite_catalog_item()
+    service = SatelliteRadarService(
+        satellite_catalog=StubSatelliteCatalog([catalog_item]),
+        track_calculator=StubSatelliteTrackCalculator(
+            tracks_by_satellite_id={catalog_item.satellite_id: []}
+        ),
+    )
 
-    service = SatelliteRadarService(satellite_catalog=satellite_catalog)
-
-    # Patch calculation to return an empty list (no passes)
-    with patch.object(service, "calculate_satellite_track", return_value=[]):
-        results = service.get_visible_satellites(
-            lat=60.1699,
-            lon=24.9384,
-            now=datetime(2026, 3, 25, 12, 0, tzinfo=UTC),
-        )
+    results = service.get_visible_satellites(
+        lat=60.1699,
+        lon=24.9384,
+        now=datetime(2026, 3, 25, 12, 0, tzinfo=UTC),
+    )
 
     assert results == []
 
 
 def test_get_visible_satellites_skips_tracks_below_minimum_elevation() -> None:
-    satellite_catalog = Mock()
-    satellite_catalog.get_all_satellites.return_value = [create_satellite_catalog_item()]
-
-    service = SatelliteRadarService(satellite_catalog=satellite_catalog)
+    catalog_item = create_satellite_catalog_item()
 
     low_track = [
         create_radar_track_point(elevation_deg=2.0),
@@ -95,13 +113,18 @@ def test_get_visible_satellites_skips_tracks_below_minimum_elevation() -> None:
         create_radar_track_point(elevation_deg=3.0),
     ]
 
-    # Only patch calculation; service should filter these out
-    with patch.object(service, "calculate_satellite_track", return_value=low_track):
-        results = service.get_visible_satellites(
-            lat=60.1699,
-            lon=24.9384,
-            now=datetime(2026, 3, 25, 12, 0, tzinfo=UTC),
-        )
+    service = SatelliteRadarService(
+        satellite_catalog=StubSatelliteCatalog([catalog_item]),
+        track_calculator=StubSatelliteTrackCalculator(
+            tracks_by_satellite_id={catalog_item.satellite_id: low_track}
+        ),
+    )
+
+    results = service.get_visible_satellites(
+        lat=60.1699,
+        lon=24.9384,
+        now=datetime(2026, 3, 25, 12, 0, tzinfo=UTC),
+    )
 
     assert results == []
 
@@ -111,15 +134,10 @@ def test_get_visible_satellites_builds_result_from_visible_track() -> None:
     visible_from = now
     visible_until = now + timedelta(minutes=1)
 
-    satellite_catalog = Mock()
-    satellite_catalog.get_all_satellites.return_value = [
-        create_satellite_catalog_item(
-            satellite_id="694",
-            satellite_name="ATLAS CENTAUR 2",
-        )
-    ]
-
-    service = SatelliteRadarService(satellite_catalog=satellite_catalog)
+    catalog_item = create_satellite_catalog_item(
+        satellite_id="00694",
+        satellite_name="ATLAS CENTAUR 2",
+    )
 
     track = [
         create_radar_track_point(
@@ -134,16 +152,18 @@ def test_get_visible_satellites_builds_result_from_visible_track() -> None:
         ),
     ]
 
-    # Patch both building and calculation - we only want to test result assembly
-    with (
-        patch.object(service, "build_earth_satellite", return_value=Mock()),
-        patch.object(service, "calculate_satellite_track", return_value=track),
-    ):
-        results = service.get_visible_satellites(lat=60.1699, lon=24.9384, now=now)
+    service = SatelliteRadarService(
+        satellite_catalog=StubSatelliteCatalog([catalog_item]),
+        track_calculator=StubSatelliteTrackCalculator(
+            tracks_by_satellite_id={catalog_item.satellite_id: track}
+        ),
+    )
+
+    results = service.get_visible_satellites(lat=60.1699, lon=24.9384, now=now)
 
     assert len(results) == 1
     r = results[0]
-    assert r.info.satellite_id == "694"
+    assert r.info.satellite_id == "00694"
     assert r.info.satellite_name == "ATLAS CENTAUR 2"
     assert r.visibility.visible_from == visible_from
     assert r.visibility.visible_until == visible_until
@@ -154,76 +174,103 @@ def test_get_visible_satellites_builds_result_from_visible_track() -> None:
 
 
 def test_get_visible_satellites_applies_limit() -> None:
-    satellite_catalog = Mock()
-    satellite_catalog.get_all_satellites.return_value = [
-        create_satellite_catalog_item(satellite_id="1"),
-        create_satellite_catalog_item(satellite_id="2"),
+    catalog_items = [
+        create_satellite_catalog_item(satellite_id="00694"),
+        create_satellite_catalog_item(satellite_id="25544"),
     ]
 
-    service = SatelliteRadarService(satellite_catalog=satellite_catalog)
-
-    # Patch so both items produce one visible point
-    with (
-        patch.object(service, "build_earth_satellite", return_value=Mock()),
-        patch.object(
-            service,
-            "calculate_satellite_track",
-            return_value=[create_radar_track_point(elevation_deg=20.0)],
+    service = SatelliteRadarService(
+        satellite_catalog=StubSatelliteCatalog(catalog_items),
+        track_calculator=StubSatelliteTrackCalculator(
+            tracks_by_satellite_id={
+                item.satellite_id: [create_radar_track_point(elevation_deg=20.0)]
+                for item in catalog_items
+            }
         ),
-    ):
-        results = service.get_visible_satellites(
-            lat=60.1699,
-            lon=24.9384,
-            limit=1,
-            now=datetime(2026, 3, 25, 12, 0, tzinfo=UTC),
-        )
+    )
+
+    results = service.get_visible_satellites(
+        lat=60.1699,
+        lon=24.9384,
+        limit=1,
+        now=datetime(2026, 3, 25, 12, 0, tzinfo=UTC),
+    )
 
     assert len(results) == 1
 
 
-def test_calculate_satellite_track_returns_expected_number_of_points_and_timestamps() -> None:
-    sat = create_earth_satellite()
-    start = datetime(2026, 3, 25, 12, 0, tzinfo=UTC)
-    total_minutes = 1
-    step_seconds = 30
-
-    points = SatelliteRadarService.calculate_satellite_track(
-        sat,
-        observer_lat=60.1699,
-        observer_lon=24.9384,
-        start_time=start,
-        total_minutes=total_minutes,
-        step_seconds=step_seconds,
+def test_get_visible_satellites_sorts_by_visible_until() -> None:
+    now = datetime(2026, 3, 25, 12, 0, tzinfo=UTC)
+    later_visible_satellite = create_satellite_catalog_item(
+        satellite_id="00694",
+        satellite_name="ATLAS CENTAUR 2",
+    )
+    earlier_visible_satellite = create_satellite_catalog_item(
+        satellite_id="25544",
+        satellite_name="ISS (ZARYA)",
     )
 
-    expected_steps = (total_minutes * 60) // step_seconds + 1
-    assert len(points) == expected_steps
-
-    expected_times = [start + timedelta(seconds=i * step_seconds) for i in range(expected_steps)]
-    assert [p.timestamp for p in points] == expected_times
-
-
-def test_calculate_satellite_track_point_fields_are_floats_and_preserve_timezone() -> None:
-    sat = create_earth_satellite()
-    # use a non-UTC timezone to ensure timezone(UTC) conversion inside method doesnt
-    # mutate returned timestamps
-
-    tz = timezone(timedelta(hours=2))
-    start = datetime(2026, 3, 25, 14, 0, tzinfo=tz)  # same instant as 12:00 UTC
-
-    points = SatelliteRadarService.calculate_satellite_track(
-        sat,
-        observer_lat=60.1699,
-        observer_lon=24.9384,
-        start_time=start,
-        total_minutes=1,
-        step_seconds=30,
+    service = SatelliteRadarService(
+        satellite_catalog=StubSatelliteCatalog(
+            [
+                later_visible_satellite,
+                earlier_visible_satellite,
+            ]
+        ),
+        track_calculator=StubSatelliteTrackCalculator(
+            tracks_by_satellite_id={
+                later_visible_satellite.satellite_id: [
+                    create_radar_track_point(
+                        timestamp=now + timedelta(minutes=5),
+                        elevation_deg=20.0,
+                    )
+                ],
+                earlier_visible_satellite.satellite_id: [
+                    create_radar_track_point(
+                        timestamp=now + timedelta(minutes=1),
+                        elevation_deg=20.0,
+                    )
+                ],
+            }
+        ),
     )
 
-    assert points, "expected at least one point"
-    for p in points:
-        assert isinstance(p.azimuth_deg, float)
-        assert isinstance(p.elevation_deg, float)
-        assert isinstance(p.distance_km, float)
-        # timestamp should preserve the original tzinfo used for start_time computations
-        assert p.timestamp.tzinfo == tz
+    results = service.get_visible_satellites(
+        lat=60.1699,
+        lon=24.9384,
+        limit=10,
+        now=now,
+    )
+
+    assert [result.info.satellite_id for result in results] == ["25544", "00694"]
+
+
+def test_get_visible_satellites_raises_when_catalog_is_unavailable() -> None:
+    service = SatelliteRadarService(
+        satellite_catalog=FailingSatelliteCatalog(),
+        track_calculator=StubSatelliteTrackCalculator(tracks_by_satellite_id={}),
+    )
+
+    with pytest.raises(SatelliteRadarCatalogUnavailableError):
+        service.get_visible_satellites(
+            lat=60.1699,
+            lon=24.9384,
+            now=datetime(2026, 3, 25, 12, 0, tzinfo=UTC),
+        )
+
+
+def test_get_visible_satellites_skips_satellite_when_track_calculation_fails() -> None:
+    service = SatelliteRadarService(
+        satellite_catalog=StubSatelliteCatalog(
+            [create_satellite_catalog_item(satellite_id="00694")]
+        ),
+        track_calculator=FailingSatelliteTrackCalculator(),
+    )
+
+    results = service.get_visible_satellites(
+        lat=60.1699,
+        lon=24.9384,
+        now=datetime(2026, 3, 25, 12, 0, tzinfo=UTC),
+    )
+
+    assert results == []

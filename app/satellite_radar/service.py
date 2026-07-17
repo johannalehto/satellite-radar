@@ -1,8 +1,6 @@
 import logging
 from datetime import UTC, datetime, timedelta
-from typing import Final
-
-from skyfield.api import EarthSatellite, wgs84
+from typing import Final, Protocol
 
 from app.models import (
     RadarTrackPoint,
@@ -12,8 +10,11 @@ from app.models import (
     SatelliteRadarItem,
     SatelliteVisibility,
 )
-from app.satellite_catalog.service import SatelliteCatalogService
 from app.satellite_radar.errors import SatelliteRadarCatalogUnavailableError
+from app.satellite_radar.track_calculator import (
+    SatelliteTrackCalculator,
+    SkyfieldSatelliteTrackCalculator,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -24,54 +25,18 @@ DEFAULT_SATELLITE_LIMIT: Final[int] = 10
 MIN_VISIBLE_ELEVATION_DEGREES: Final[float] = 10.0
 
 
+class SatelliteCatalogReader(Protocol):
+    def get_all_satellites(self) -> list[SatelliteCatalogItem]: ...
+
+
 class SatelliteRadarService:
-    def __init__(self, satellite_catalog: SatelliteCatalogService):
+    def __init__(
+        self,
+        satellite_catalog: SatelliteCatalogReader,
+        track_calculator: SatelliteTrackCalculator | None = None,
+    ):
         self.satellite_catalog = satellite_catalog
-
-    @staticmethod
-    def build_earth_satellite(catalog_item: SatelliteCatalogItem) -> EarthSatellite:
-        return EarthSatellite(
-            catalog_item.tle.line1,
-            catalog_item.tle.line2,
-            catalog_item.satellite_name,
-        )
-
-    @staticmethod
-    def calculate_satellite_track(
-        satellite: EarthSatellite,
-        *,
-        observer_lat: float,
-        observer_lon: float,
-        start_time: datetime,
-        total_minutes: int,
-        step_seconds: int,
-    ) -> list[RadarTrackPoint]:
-        if start_time.tzinfo is None:
-            raise ValueError("start_time must be timezone-aware")
-
-        ts = satellite.ts
-        observer = wgs84.latlon(observer_lat, observer_lon)
-
-        points: list[RadarTrackPoint] = []
-        total_steps = (total_minutes * 60) // step_seconds + 1
-
-        for step in range(total_steps):
-            point_time = start_time + timedelta(seconds=step * step_seconds)
-            t = ts.from_datetime(point_time.astimezone(UTC))
-
-            topocentric = (satellite - observer).at(t)
-            alt, az, distance = topocentric.altaz()
-
-            points.append(
-                RadarTrackPoint(
-                    timestamp=point_time,
-                    azimuth_deg=az.degrees,
-                    elevation_deg=alt.degrees,
-                    distance_km=distance.km,
-                )
-            )
-
-        return points
+        self.track_calculator = track_calculator or SkyfieldSatelliteTrackCalculator()
 
     @staticmethod
     def get_max_elevation(track: list[RadarTrackPoint]) -> float:
@@ -107,9 +72,8 @@ class SatelliteRadarService:
         total_minutes: int,
         step_seconds: int,
     ) -> SatelliteRadarItem | None:
-        satellite = self.build_earth_satellite(item)
-        track = self.calculate_satellite_track(
-            satellite,
+        track = self.track_calculator.calculate_track(
+            item,
             observer_lat=lat,
             observer_lon=lon,
             start_time=start_time,
