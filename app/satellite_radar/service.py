@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from typing import Final
 
 from skyfield.api import EarthSatellite, wgs84
 
@@ -12,11 +13,11 @@ from app.models import (
 )
 from app.satellite_catalog.service import SatelliteCatalogService
 
-DEFAULT_MINUTES_BEFORE = 5
-DEFAULT_MINUTES_AFTER = 5
-DEFAULT_STEP_SECONDS = 30
-DEFAULT_SATELLITE_LIMIT = 10
-MIN_VISIBLE_ELEVATION_DEGREE = 10.0
+DEFAULT_MINUTES_BEFORE: Final[int] = 5
+DEFAULT_MINUTES_AFTER: Final[int] = 5
+DEFAULT_STEP_SECONDS: Final[int] = 30
+DEFAULT_SATELLITE_LIMIT: Final[int] = 10
+MIN_VISIBLE_ELEVATION_DEGREES: Final[float] = 10.0
 
 
 class SatelliteRadarService:
@@ -90,7 +91,7 @@ class SatelliteRadarService:
     @staticmethod
     def get_visible_track(track: list[RadarTrackPoint]) -> list[RadarTrackPoint]:
         # TODO: add sun related visibility filtering
-        return [point for point in track if point.elevation_deg >= MIN_VISIBLE_ELEVATION_DEGREE]
+        return [point for point in track if point.elevation_deg >= MIN_VISIBLE_ELEVATION_DEGREES]
 
     def get_visible_satellites(
         self,
