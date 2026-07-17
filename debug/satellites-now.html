@@ -139,8 +139,8 @@
     }
 
     function getStatus(pass, now) {
-      const from = new Date(pass.visible_from);
-      const until = new Date(pass.visible_until);
+      const from = new Date(pass.visibility.visible_from);
+      const until = new Date(pass.visibility.visible_until);
 
       if (now < from) return "approaching";
       if (now <= until) return "visible-now";
@@ -148,8 +148,8 @@
     }
 
     function renderPass(pass, now) {
-      const from = new Date(pass.visible_from);
-      const until = new Date(pass.visible_until);
+      const from = new Date(pass.visibility.visible_from);
+      const until = new Date(pass.visibility.visible_until);
       const status = getStatus(pass, now);
       const currentPoint = getCurrentTrackPoint(pass, now);
       const currentElevationText =
@@ -184,22 +184,22 @@
         <div class="card">
           <div class="top-row">
             <div>
-              <div class="name">${pass.satellite_name}</div>
-              <div class="muted">ID ${pass.satellite_id}</div>
+              <div class="name">${pass.info.satellite_name}</div>
+              <div class="muted">ID ${pass.info.satellite_id}</div>
             </div>
             <div class="badge">${badgeText}</div>
           </div>
 
           <div class="direction-row">
-            <span>${pass.start_direction}</span>
+            <span>${pass.start.direction}</span>
             <span class="arrow">→</span>
-            <span>${pass.end_direction}</span>
+            <span>${pass.end.direction}</span>
           </div>
 
           <div class="meta-row">
             <span>now ${currentElevationText}</span>
-            <span>max ${pass.max_elevation_deg.toFixed(1)}°</span>
-            <span>${formatTime(pass.visible_from)}–${formatTime(pass.visible_until)}</span>
+            <span>max ${pass.visibility.max_elevation_deg.toFixed(1)}°</span>
+            <span>${formatTime(pass.visibility.visible_from)}–${formatTime(pass.visibility.visible_until)}</span>
           </div>
         </div>
       `;
@@ -218,9 +218,15 @@
         groups[getStatus(pass, now)].push(pass);
       }
 
-      groups["visible-now"].sort((a, b) => b.max_elevation_deg - a.max_elevation_deg);
-      groups.approaching.sort((a, b) => new Date(a.visible_from) - new Date(b.visible_from));
-      groups.passed.sort((a, b) => new Date(b.visible_until) - new Date(a.visible_until));
+      groups["visible-now"].sort(
+        (a, b) => b.visibility.max_elevation_deg - a.visibility.max_elevation_deg
+      );
+      groups.approaching.sort(
+        (a, b) => new Date(a.visibility.visible_from) - new Date(b.visibility.visible_from)
+      );
+      groups.passed.sort(
+        (a, b) => new Date(b.visibility.visible_until) - new Date(a.visibility.visible_until)
+      );
 
       document.getElementById("visible-now").innerHTML =
         groups["visible-now"].map(pass => renderPass(pass, now)).join("") || "<p class='muted'>None</p>";
