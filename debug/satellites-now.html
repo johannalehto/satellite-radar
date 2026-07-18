@@ -101,9 +101,10 @@
 
   <script>
     const API_BASE =
+      window.location.protocol === "file:" ||
       window.location.hostname === "localhost" ||
       window.location.hostname === "127.0.0.1"
-        ? "http://localhost:8000"
+        ? "http://127.0.0.1:8000"
         : "https://satellite-radar.fly.dev";
 
     let latestData = [];
@@ -138,6 +139,10 @@
       return `${minutes}:${String(rest).padStart(2, "0")}`;
     }
 
+    function formatDegrees(value) {
+      return Number.isFinite(value) ? `${value.toFixed(1)}°` : "—";
+    }
+
     function getStatus(pass, now) {
       const from = new Date(pass.visibility.visible_from);
       const until = new Date(pass.visibility.visible_until);
@@ -154,8 +159,9 @@
       const currentPoint = getCurrentTrackPoint(pass, now);
       const currentElevationText =
         currentPoint && status === "visible-now"
-          ? `${currentPoint.elevation_deg.toFixed(1)}°`
+          ? formatDegrees(currentPoint.elevation_deg)
           : "—";
+      const maxElevationText = formatDegrees(pass.visibility.max_elevation_deg);
 
       let badgeText = "";
 
@@ -198,7 +204,7 @@
 
           <div class="meta-row">
             <span>now ${currentElevationText}</span>
-            <span>max ${pass.visibility.max_elevation_deg.toFixed(1)}°</span>
+            <span>max ${maxElevationText}</span>
             <span>${formatTime(pass.visibility.visible_from)}–${formatTime(pass.visibility.visible_until)}</span>
           </div>
         </div>
@@ -238,33 +244,6 @@
         groups.passed.map(pass => renderPass(pass, now)).join("") || "<p class='muted'>None</p>";
     }
 
-    function normalizePass(pass) {
-      if (pass.info && pass.visibility && pass.start && pass.end) {
-        return pass;
-      }
-
-      return {
-        info: {
-          satellite_id: pass.satellite_id,
-          satellite_name: pass.satellite_name,
-        },
-        visibility: {
-          visible_from: pass.visible_from,
-          visible_until: pass.visible_until,
-          max_elevation_deg: pass.max_elevation_deg,
-        },
-        start: {
-          azimuth_deg: pass.start_azimuth_deg,
-          direction: pass.start_direction,
-        },
-        end: {
-          azimuth_deg: pass.end_azimuth_deg,
-          direction: pass.end_direction,
-        },
-        track: pass.track || [],
-      };
-    }
-
     async function fetchSatellites(lat, lon) {
       const response = await fetch(`${API_BASE}/satellite_radar/get_visible_satellites/${lat}/${lon}`);
 
@@ -272,8 +251,7 @@
         throw new Error(`Request failed: ${response.status}`);
       }
 
-      const data = await response.json();
-      return Array.isArray(data) ? data.map(normalizePass) : [];
+      return response.json();
     }
 
     async function getLocationName(lat, lon) {
