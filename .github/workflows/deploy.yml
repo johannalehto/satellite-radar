@@ -1,12 +1,11 @@
-name: Deploy
+name: Deploy production
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 concurrency:
-  group: deploy-main
-  cancel-in-progress: true
+  group: deploy-production
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -19,6 +18,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Show deployed commit
+        run: |
+          echo "Deploying commit: $GITHUB_SHA"
+          git log -1 --oneline
 
       - name: Setup flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
