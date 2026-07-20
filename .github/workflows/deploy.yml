@@ -30,6 +30,9 @@ jobs:
       - name: Deploy satellite-radar
         run: flyctl deploy --remote-only -a satellite-radar -c fly.api.toml
 
+      - name: Deploy satellites-debug-ui
+        run: flyctl deploy --remote-only -a satellites-debug-ui -c debug/fly.toml debug
+
       - name: Recreate scheduled updater machine (daily run)
         run: |
           set -e
