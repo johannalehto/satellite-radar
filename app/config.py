@@ -18,7 +18,7 @@ MONGO_PASSWORD = load_secret("/run/secrets/mongo_password") or os.getenv("MONGO_
 MONGO_HOST = os.getenv("MONGO_HOST", "cluster0.afeh5pj.mongodb.net")
 MONGO_DBNAME = os.getenv("MONGO_DBNAME", "satellites_db")
 
-MONGO_URI = (
+MONGO_URI = os.getenv("MONGO_URI") or (
     f"mongodb+srv://{MONGO_USERNAME}:{MONGO_PASSWORD}@{MONGO_HOST}/"  # noqa: E231
     f"{MONGO_DBNAME}?retryWrites=true&w=majority&appName=Cluster0"
 )

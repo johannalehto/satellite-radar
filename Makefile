@@ -6,7 +6,7 @@ POETRY := poetry
 PYTHON := python
 
 # Docker
-.PHONY: start down build docker-logs
+.PHONY: start down build docker-logs update-catalog-local
 start:  ## Start Docker containers in detached mode
 	$(DOCKER_COMPOSE) up -d
 
@@ -18,6 +18,9 @@ build:  ## Build Docker images
 
 docker-logs:  ## View Docker logs
 	$(DOCKER_COMPOSE) logs -f
+
+update-catalog-local:  ## Populate the local Docker Mongo catalog from CelesTrak
+	$(DOCKER_COMPOSE) exec app python -m app.satellite_catalog.updater
 
 # eg. make script name=update_satellite_catalog.py
 script: ## Run a script in the app container

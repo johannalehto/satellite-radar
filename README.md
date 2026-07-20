@@ -21,7 +21,8 @@ Install Python dependencies:
 poetry install
 ```
 
-Create a local `.env` file from the example:
+Create a local `.env` file from the example if you want to run the API directly with Poetry or
+`docker run` against the shared Atlas database:
 
 ```bash
 cp .env.example .env
@@ -126,6 +127,53 @@ poetry run pytest --cov --cov-report=term-missing --cov-report=xml
 
 The root `Dockerfile` builds the FastAPI API image.
 
+There are two Docker workflows:
+
+- `docker compose` runs the API with a local MongoDB container.
+- `docker build` / `docker run --env-file .env` runs only the API container against the configured
+  MongoDB credentials in `.env`.
+
+### Docker Compose With Local MongoDB
+
+Start the API and local MongoDB:
+
+```bash
+make start
+```
+
+This starts:
+
+- FastAPI app: `http://127.0.0.1:8000`
+- MongoDB: `127.0.0.1:27017`
+
+Docker Compose sets the app connection string to:
+
+```text
+mongodb://satellites-local:satellites-local-password@mongo:27017/satellites_db?authSource=admin
+```
+
+These are local-only Docker Compose credentials. They are not used by Atlas or Fly.
+
+The local MongoDB starts empty. Populate the local `satellite_catalog` collection from CelesTrak:
+
+```bash
+make update-catalog-local
+```
+
+Then test the radar endpoint:
+
+```text
+http://127.0.0.1:8000/satellite_radar/get_visible_satellites/35.3112/139.5341
+```
+
+Stop the containers:
+
+```bash
+make down
+```
+
+### Docker Image With `.env`
+
 Build the API image:
 
 ```bash
@@ -212,18 +260,8 @@ TLE documents, or no satellites may be visible for the requested location and ti
 If the debug UI works locally but not in production, make sure the `satellites-debug-ui` app was
 deployed. Deploying only the API does not update the static debug HTML.
 
-If MongoDB access fails locally, verify `.env` contains valid `MONGO_USERNAME` and
-`MONGO_PASSWORD`.
+If MongoDB access fails when running with Poetry or `docker run --env-file .env`, verify `.env`
+contains valid `MONGO_USERNAME` and `MONGO_PASSWORD`.
 
-## Known Gaps
-
-`docker-compose.yml` currently starts a local MongoDB container, but the application configuration
-builds a MongoDB Atlas-style `mongodb+srv://...` URI from `MONGO_USERNAME`, `MONGO_PASSWORD`,
-`MONGO_HOST`, and `MONGO_DBNAME`. Because of this, Docker Compose is not yet a clean local-Mongo
-development workflow.
-
-Until that is resolved, prefer:
-
-- `make run-local` for local API development
-- `docker build` / `docker run --env-file .env` for testing the API Docker image
-- Fly deployment for production
+If Docker Compose returns an empty radar response, run `make update-catalog-local` to populate the
+local MongoDB catalog.
