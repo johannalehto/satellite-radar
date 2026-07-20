@@ -76,6 +76,16 @@
       color: #a1a1aa;
       font-size: 15px;
     }
+
+    .loading {
+      margin-top: 28px;
+      font-size: 24px;
+      font-weight: 750;
+    }
+
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -83,21 +93,24 @@
 
   <button onclick="loadSatellites()">Use my location</button>
   <p id="status" class="muted"></p>
+  <div id="loading" class="loading hidden">Fetching satellites...</div>
 
-  <section>
-    <h2>Visible now</h2>
-    <div id="visible-now"></div>
-  </section>
+  <div id="results" class="hidden">
+    <section>
+      <h2>Visible now</h2>
+      <div id="visible-now"></div>
+    </section>
 
-  <section>
-    <h2>Approaching</h2>
-    <div id="approaching"></div>
-  </section>
+    <section>
+      <h2>Approaching</h2>
+      <div id="approaching"></div>
+    </section>
 
-  <section>
-    <h2>Recently passed</h2>
-    <div id="passed"></div>
-  </section>
+    <section>
+      <h2>Recently passed</h2>
+      <div id="passed"></div>
+    </section>
+  </div>
 
   <script>
     const API_BASE =
@@ -116,12 +129,15 @@
     async function refreshSatellites() {
       if (!currentCoords) return;
 
+      document.getElementById("loading").classList.remove("hidden");
+
       latestData = await fetchSatellites(
         currentCoords.latitude,
         currentCoords.longitude
       );
 
       render(latestData);
+      document.getElementById("loading").classList.add("hidden");
     }
 
     function formatTime(iso) {
@@ -213,6 +229,7 @@
 
     function render(data) {
       const now = new Date();
+      document.getElementById("results").classList.remove("hidden");
 
       const groups = {
         "visible-now": [],
