@@ -24,9 +24,12 @@ script: ## Run a script in the app container
 	$(DOCKER_COMPOSE) exec app poetry run python scripts/$(name)
 
 # Local development
-.PHONY: run-local
+.PHONY: run-local run-debug-ui
 run-local:  ## Run the app locally with Poetry
 	$(POETRY) run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+run-debug-ui:  ## Serve the debug UI locally on port 3000
+	$(PYTHON) -m http.server 3000 --directory debug
 
 # Testing and formatting
 .PHONY: test format lint
@@ -57,8 +60,15 @@ install:  ## Install dependencies with Poetry
 update-dependencies:  ## Update dependencies with Poetry
 	$(POETRY) update
 
-#  Satellite catalog updater
-deploy-scheduled-updater:
+# Deployment
+.PHONY: deploy-api deploy-debug-ui deploy-scheduled-updater
+deploy-api:  ## Deploy the FastAPI app to Fly
+	flyctl deploy --remote-only -a satellite-radar -c fly.api.toml
+
+deploy-debug-ui:  ## Deploy the debug UI to Fly
+	flyctl deploy --remote-only -a satellites-debug-ui -c debug/fly.toml debug
+
+deploy-scheduled-updater:  ## Recreate the scheduled catalog updater Fly Machine
 	@echo "📋 Listing old machines..."
 	OLD_IDS="$$(fly machines list -a satellite-catalog-updater --json | python3 -c "import sys, json; print(' '.join(m['id'] for m in json.load(sys.stdin)))")"; \
 	echo "Old machines: $${OLD_IDS:-<none>}"; \
