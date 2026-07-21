@@ -1,8 +1,9 @@
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 import pytest
 
-from app.models import SatelliteTLEUpdate
+from app.models import SatelliteCatalogStatus, SatelliteTLEUpdate
 from app.satellite_catalog.service import SatelliteCatalogService
 from tests.factory import create_celestrak_output, create_tle
 
@@ -76,3 +77,18 @@ def test_update_satellite_catalog_with_tle_data_calls_repo_with_mapped_updates()
     assert tle_updates[0].satellite_id == "12345"
     assert tle_updates[0].satellite_name == "MockSat-1"
     assert tle_updates[0].tle is not None
+
+
+def test_get_catalog_status_returns_repository_status() -> None:
+    catalog_status = SatelliteCatalogStatus(
+        satellite_count=157,
+        latest_tle_fetched_at=datetime(2026, 7, 21, 12, 0, tzinfo=UTC),
+        source="celestrak",
+    )
+    mock_repo = MagicMock()
+    mock_repo.get_catalog_status.return_value = catalog_status
+
+    service = SatelliteCatalogService(repository=mock_repo)
+
+    assert service.get_catalog_status() == catalog_status
+    mock_repo.get_catalog_status.assert_called_once_with()

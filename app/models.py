@@ -45,6 +45,12 @@ class SatelliteCatalogItem(BaseModel):
     tle: TLEData
 
 
+class SatelliteCatalogStatus(BaseModel):
+    satellite_count: int
+    latest_tle_fetched_at: datetime | None
+    source: str | None
+
+
 """
 RADAR MODELS
 """

@@ -1,6 +1,6 @@
-from pymongo import UpdateOne
+from pymongo import DESCENDING, UpdateOne
 
-from app.models import SatelliteCatalogItem, SatelliteTLEUpdate
+from app.models import SatelliteCatalogItem, SatelliteCatalogStatus, SatelliteTLEUpdate
 
 
 class SatelliteCatalogRepository:
@@ -49,3 +49,23 @@ class SatelliteCatalogRepository:
             cursor = cursor.limit(limit)
 
         return [SatelliteCatalogItem.model_validate(doc) for doc in cursor]
+
+    def get_catalog_status(self) -> SatelliteCatalogStatus:
+        satellite_count = self.collection.count_documents({})
+        latest_doc = self.collection.find_one(
+            {},
+            projection={
+                "_id": 0,
+                "tle.fetched_at": 1,
+                "tle.source": 1,
+            },
+            sort=[("tle.fetched_at", DESCENDING)],
+        )
+
+        latest_tle = (latest_doc or {}).get("tle", {})
+
+        return SatelliteCatalogStatus(
+            satellite_count=satellite_count,
+            latest_tle_fetched_at=latest_tle.get("fetched_at"),
+            source=latest_tle.get("source"),
+        )

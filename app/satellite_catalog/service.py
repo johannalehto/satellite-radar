@@ -2,6 +2,7 @@ from app.db.mongo import create_satellite_catalog_repository
 from app.models import (
     CelestrakSatelliteOutput,
     SatelliteCatalogItem,
+    SatelliteCatalogStatus,
     SatelliteTLEUpdate,
 )
 from app.satellite_catalog.celestrak_service import CelestrakService
@@ -40,3 +41,6 @@ class SatelliteCatalogService:
 
     def get_all_satellites(self, *, limit: int | None = None) -> list[SatelliteCatalogItem]:
         return self.repository.get_all_satellites(limit=limit)
+
+    def get_catalog_status(self) -> SatelliteCatalogStatus:
+        return self.repository.get_catalog_status()

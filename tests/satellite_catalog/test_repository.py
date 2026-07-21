@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -57,3 +58,39 @@ def test_upsert_tles_to_db_returns_early_for_empty_input() -> None:
     repository.upsert_tles_to_db([])
 
     mock_collection.bulk_write.assert_not_called()
+
+
+def test_get_catalog_status_returns_count_and_latest_tle_metadata() -> None:
+    latest_fetched_at = datetime(2026, 7, 21, 12, 0, tzinfo=UTC)
+    mock_collection = MagicMock()
+    mock_collection.count_documents.return_value = 157
+    mock_collection.find_one.return_value = {
+        "tle": {
+            "fetched_at": latest_fetched_at,
+            "source": "celestrak",
+        }
+    }
+
+    repository = SatelliteCatalogRepository(collection=mock_collection)
+
+    status = repository.get_catalog_status()
+
+    mock_collection.count_documents.assert_called_once_with({})
+    mock_collection.find_one.assert_called_once()
+    assert status.satellite_count == 157
+    assert status.latest_tle_fetched_at == latest_fetched_at
+    assert status.source == "celestrak"
+
+
+def test_get_catalog_status_returns_empty_metadata_when_catalog_is_empty() -> None:
+    mock_collection = MagicMock()
+    mock_collection.count_documents.return_value = 0
+    mock_collection.find_one.return_value = None
+
+    repository = SatelliteCatalogRepository(collection=mock_collection)
+
+    status = repository.get_catalog_status()
+
+    assert status.satellite_count == 0
+    assert status.latest_tle_fetched_at is None
+    assert status.source is None

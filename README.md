@@ -56,6 +56,8 @@ poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 Useful local URLs:
 
+- Health endpoint: `http://127.0.0.1:8000/health`
+- Catalog status: `http://127.0.0.1:8000/satellite_catalog/status`
 - FastAPI docs: `http://127.0.0.1:8000/docs`
 - OpenAPI JSON: `http://127.0.0.1:8000/openapi.json`
 - Radar endpoint: `http://127.0.0.1:8000/satellite_radar/get_visible_satellites/{lat}/{lon}`
@@ -256,6 +258,18 @@ make deploy-scheduled-updater
 
 If the radar endpoint returns an empty list, the catalog may be empty, MongoDB may contain no usable
 TLE documents, or no satellites may be visible for the requested location and time.
+
+Check catalog freshness with:
+
+```text
+http://127.0.0.1:8000/satellite_catalog/status
+```
+
+Check whether the API process is alive without triggering catalog reads or satellite calculations:
+
+```text
+http://127.0.0.1:8000/health
+```
 
 If the debug UI works locally but not in production, make sure the `satellites-debug-ui` app was
 deployed. Deploying only the API does not update the static debug HTML.
