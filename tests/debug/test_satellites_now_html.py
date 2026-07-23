@@ -7,6 +7,10 @@ def test_debug_page_references_satellite_radar_response_fields() -> None:
     required_fields = [
         "pass.info.satellite_name",
         "pass.info.satellite_id",
+        "info.owner?.name",
+        "info.object_type",
+        "info.launch?.date",
+        "info.launch?.site?.name",
         "pass.visibility.visible_from",
         "pass.visibility.visible_until",
         "pass.visibility.max_elevation_deg",
