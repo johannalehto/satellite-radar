@@ -13,11 +13,17 @@ from app.config import CELESTRAK_100_BRIGHTEST_URL, CELESTRAK_SATCAT_URL
 from app.models import (
     RawSatcatEntry,
     RawTLEEntry,
+    SatelliteLaunch,
     SatelliteMetadata,
     SatelliteMetadataUpdate,
     SatelliteTLEUpdate,
     TLEData,
     TLEParsed,
+)
+from app.satellite_catalog.satcat_mappings import (
+    map_satcat_launch_site,
+    map_satcat_object_type,
+    map_satcat_owner,
 )
 
 logger = logging.getLogger(__name__)
@@ -132,6 +138,13 @@ class CelestrakService:
         for raw_record in raw_records:
             try:
                 satcat_entry = RawSatcatEntry.model_validate(raw_record)
+                launch_date = self._parse_optional_date(satcat_entry.launch_date)
+                launch_site = map_satcat_launch_site(satcat_entry.launch_site)
+                launch = (
+                    SatelliteLaunch(date=launch_date, site=launch_site)
+                    if launch_date or launch_site
+                    else None
+                )
 
                 metadata_updates.append(
                     SatelliteMetadataUpdate(
@@ -140,10 +153,9 @@ class CelestrakService:
                         metadata=SatelliteMetadata(
                             source=CELESTRAK_SOURCE,
                             fetched_at=fetched_at,
-                            owner=satcat_entry.owner or None,
-                            object_type=satcat_entry.object_type or None,
-                            launch_date=self._parse_optional_date(satcat_entry.launch_date),
-                            launch_site=satcat_entry.launch_site or None,
+                            owner=map_satcat_owner(satcat_entry.owner),
+                            object_type=map_satcat_object_type(satcat_entry.object_type),
+                            launch=launch,
                         ),
                     ),
                 )

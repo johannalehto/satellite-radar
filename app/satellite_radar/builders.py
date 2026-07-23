@@ -41,8 +41,7 @@ def build_satellite_radar_item(
             satellite_name=catalog_item.satellite_name,
             owner=metadata.owner if metadata else None,
             object_type=metadata.object_type if metadata else None,
-            launch_date=metadata.launch_date if metadata else None,
-            launch_site=metadata.launch_site if metadata else None,
+            launch=metadata.launch if metadata else None,
         ),
         visibility=SatelliteVisibility(
             visible_from=visible_track[0].timestamp,

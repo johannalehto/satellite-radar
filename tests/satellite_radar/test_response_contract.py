@@ -10,8 +10,7 @@ def test_satellite_radar_item_response_shape() -> None:
         "satellite_name",
         "owner",
         "object_type",
-        "launch_date",
-        "launch_site",
+        "launch",
     }
     assert set(response["visibility"]) == {
         "visible_from",

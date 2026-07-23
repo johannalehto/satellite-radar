@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 import pytest
 from skyfield.api import load
 
-from app.models import SatelliteTLEUpdate
+from app.models import SatelliteObjectType, SatelliteTLEUpdate
 from app.satellite_catalog.celestrak_service import CelestrakService, RawTLEEntry
 from tests.factory import create_earth_satellite
 
@@ -126,7 +126,7 @@ def test_fetch_satcat_metadata_returns_metadata_updates() -> None:
         {
             "NORAD_CAT_ID": 694,
             "OBJECT_NAME": "ATLAS CENTAUR 2",
-            "OBJECT_TYPE": "ROCKET BODY",
+            "OBJECT_TYPE": "R/B",
             "OPS_STATUS_CODE": "D",
             "OWNER": "US",
             "LAUNCH_DATE": "1963-11-27",
@@ -148,10 +148,15 @@ def test_fetch_satcat_metadata_returns_metadata_updates() -> None:
     assert results[0].satellite_name == "ATLAS CENTAUR 2"
     assert results[0].metadata.source == "celestrak"
     assert results[0].metadata.fetched_at == datetime(2026, 2, 25, 12, 0, tzinfo=UTC)
-    assert results[0].metadata.owner == "US"
-    assert results[0].metadata.object_type == "ROCKET BODY"
-    assert results[0].metadata.launch_date == datetime(1963, 11, 27, tzinfo=UTC).date()
-    assert results[0].metadata.launch_site == "AFETR"
+    assert results[0].metadata.owner is not None
+    assert results[0].metadata.owner.code == "US"
+    assert results[0].metadata.owner.name == "United States"
+    assert results[0].metadata.object_type == SatelliteObjectType.ROCKET_BODY
+    assert results[0].metadata.launch is not None
+    assert results[0].metadata.launch.date == datetime(1963, 11, 27, tzinfo=UTC).date()
+    assert results[0].metadata.launch.site is not None
+    assert results[0].metadata.launch.site.code == "AFETR"
+    assert results[0].metadata.launch.site.name == "Cape Canaveral Space Force Station"
 
 
 def test_fetch_satcat_metadata_skips_invalid_records() -> None:
@@ -200,4 +205,53 @@ def test_fetch_satcat_metadata_converts_empty_optional_strings_to_none() -> None
     assert len(results) == 1
     assert results[0].metadata.owner is None
     assert results[0].metadata.object_type is None
-    assert results[0].metadata.launch_site is None
+    assert results[0].metadata.launch is None
+
+
+def test_fetch_satcat_metadata_maps_owner_codes_to_readable_names() -> None:
+    raw_records = [
+        {
+            "NORAD_CAT_ID": 694,
+            "OBJECT_NAME": "CHINA SAT",
+            "OWNER": "PRC",
+        },
+        {
+            "NORAD_CAT_ID": 695,
+            "OBJECT_NAME": "TAIWAN SAT",
+            "OWNER": "ROC",
+        },
+    ]
+
+    service = CelestrakService(
+        lines_loader=lambda: [],
+        satcat_loader=lambda: raw_records,
+    )
+
+    results = service.fetch_satcat_metadata()
+
+    assert results[0].metadata.owner is not None
+    assert results[0].metadata.owner.name == "China"
+    assert results[1].metadata.owner is not None
+    assert results[1].metadata.owner.name == "Taiwan"
+
+
+def test_fetch_satcat_metadata_maps_launch_site_codes_to_readable_names() -> None:
+    raw_records = [
+        {
+            "NORAD_CAT_ID": 694,
+            "OBJECT_NAME": "ATLAS CENTAUR 2",
+            "LAUNCH_SITE": "TYMSC",
+        }
+    ]
+
+    service = CelestrakService(
+        lines_loader=lambda: [],
+        satcat_loader=lambda: raw_records,
+    )
+
+    results = service.fetch_satcat_metadata()
+
+    assert results[0].metadata.launch is not None
+    assert results[0].metadata.launch.site is not None
+    assert results[0].metadata.launch.site.code == "TYMSC"
+    assert results[0].metadata.launch.site.name == "Taiyuan Satellite Launch Center"

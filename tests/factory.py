@@ -7,8 +7,12 @@ from app.models import (
     RadarTrackPoint,
     SatelliteCatalogItem,
     SatelliteInfo,
+    SatelliteLaunch,
+    SatelliteLaunchSite,
     SatelliteMetadata,
     SatelliteMetadataUpdate,
+    SatelliteObjectType,
+    SatelliteOwner,
     SatellitePassPoint,
     SatelliteRadarItem,
     SatelliteTLEUpdate,
@@ -81,10 +85,12 @@ def create_satellite_metadata(**kwargs: Any) -> SatelliteMetadata:
     data = {
         "source": "celestrak",
         "fetched_at": datetime(2026, 2, 25, 12, 0, tzinfo=UTC),
-        "owner": "US",
-        "object_type": "PAYLOAD",
-        "launch_date": datetime(1998, 11, 20, tzinfo=UTC).date(),
-        "launch_site": "TYMSC",
+        "owner": SatelliteOwner(code="US", name="United States"),
+        "object_type": SatelliteObjectType.PAYLOAD,
+        "launch": SatelliteLaunch(
+            date=datetime(1998, 11, 20, tzinfo=UTC).date(),
+            site=SatelliteLaunchSite(code="TYMSC", name="Taiyuan Satellite Launch Center"),
+        ),
     }
     data.update(kwargs)
     return SatelliteMetadata(**data)

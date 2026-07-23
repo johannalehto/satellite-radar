@@ -2,6 +2,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
+from app.models import SatelliteLaunch, SatelliteLaunchSite, SatelliteObjectType, SatelliteOwner
 from app.satellite_radar.builders import (
     azimuth_to_direction,
     build_satellite_radar_item,
@@ -63,20 +64,30 @@ def test_build_satellite_radar_item_maps_catalog_metadata_to_info() -> None:
     launch_date = datetime(1963, 11, 27, tzinfo=UTC).date()
     catalog_item = create_satellite_catalog_item(
         metadata=create_satellite_metadata(
-            owner="US",
-            object_type="ROCKET BODY",
-            launch_date=launch_date,
-            launch_site="AFETR",
+            owner=SatelliteOwner(code="US", name="United States"),
+            object_type=SatelliteObjectType.ROCKET_BODY,
+            launch=SatelliteLaunch(
+                date=launch_date,
+                site=SatelliteLaunchSite(
+                    code="AFETR",
+                    name="Cape Canaveral Space Force Station",
+                ),
+            ),
         ),
     )
     track = [create_radar_track_point()]
 
     result = build_satellite_radar_item(catalog_item, track)
 
-    assert result.info.owner == "US"
-    assert result.info.object_type == "ROCKET BODY"
-    assert result.info.launch_date == launch_date
-    assert result.info.launch_site == "AFETR"
+    assert result.info.owner == SatelliteOwner(code="US", name="United States")
+    assert result.info.object_type == SatelliteObjectType.ROCKET_BODY
+    assert result.info.launch == SatelliteLaunch(
+        date=launch_date,
+        site=SatelliteLaunchSite(
+            code="AFETR",
+            name="Cape Canaveral Space Force Station",
+        ),
+    )
 
 
 @pytest.mark.parametrize(

@@ -1,4 +1,7 @@
-from datetime import date, datetime
+from __future__ import annotations
+
+from datetime import date as Date, datetime
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
@@ -42,13 +45,34 @@ class SatelliteTLEUpdate(BaseModel):
     tle: TLEData
 
 
+class SatelliteObjectType(StrEnum):
+    PAYLOAD = "payload"
+    ROCKET_BODY = "rocket_body"
+    DEBRIS = "debris"
+    UNKNOWN = "unknown"
+
+
+class SatelliteOwner(BaseModel):
+    code: str
+    name: str
+
+
+class SatelliteLaunchSite(BaseModel):
+    code: str
+    name: str
+
+
+class SatelliteLaunch(BaseModel):
+    date: Date | None = None
+    site: SatelliteLaunchSite | None = None
+
+
 class SatelliteMetadata(BaseModel):
     source: str
     fetched_at: datetime
-    owner: str | None = None
-    object_type: str | None = None
-    launch_date: date | None = None
-    launch_site: str | None = None
+    owner: SatelliteOwner | None = None
+    object_type: SatelliteObjectType | None = None
+    launch: SatelliteLaunch | None = None
 
 
 class SatelliteMetadataUpdate(BaseModel):
@@ -85,10 +109,9 @@ class RadarTrackPoint(BaseModel):
 class SatelliteInfo(BaseModel):
     satellite_id: str
     satellite_name: str
-    owner: str | None = None
-    object_type: str | None = None
-    launch_date: date | None = None
-    launch_site: str | None = None
+    owner: SatelliteOwner | None = None
+    object_type: SatelliteObjectType | None = None
+    launch: SatelliteLaunch | None = None
 
 
 class SatelliteVisibility(BaseModel):
