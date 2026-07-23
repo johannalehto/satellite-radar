@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import date, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class TLEParsed(BaseModel):
@@ -27,16 +27,41 @@ class RawTLEEntry(BaseModel):
     line2: str
 
 
+class RawSatcatEntry(BaseModel):
+    satellite_id: int = Field(alias="NORAD_CAT_ID")
+    satellite_name: str = Field(alias="OBJECT_NAME")
+    owner: str | None = Field(default=None, alias="OWNER")
+    object_type: str | None = Field(default=None, alias="OBJECT_TYPE")
+    launch_date: str | None = Field(default=None, alias="LAUNCH_DATE")
+    launch_site: str | None = Field(default=None, alias="LAUNCH_SITE")
+
+
 class SatelliteTLEUpdate(BaseModel):
     satellite_id: str
     satellite_name: str
     tle: TLEData
 
 
+class SatelliteMetadata(BaseModel):
+    source: str
+    fetched_at: datetime
+    owner: str | None = None
+    object_type: str | None = None
+    launch_date: date | None = None
+    launch_site: str | None = None
+
+
+class SatelliteMetadataUpdate(BaseModel):
+    satellite_id: str
+    satellite_name: str
+    metadata: SatelliteMetadata
+
+
 class SatelliteCatalogItem(BaseModel):
     satellite_id: str
     satellite_name: str
     tle: TLEData
+    metadata: SatelliteMetadata | None = None
 
 
 class SatelliteCatalogStatus(BaseModel):

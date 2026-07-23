@@ -24,3 +24,4 @@ MONGO_URI = os.getenv("MONGO_URI") or (
 )
 
 CELESTRAK_100_BRIGHTEST_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle"
+CELESTRAK_SATCAT_URL = "https://celestrak.org/satcat/records.php?GROUP=visual&FORMAT=JSON"

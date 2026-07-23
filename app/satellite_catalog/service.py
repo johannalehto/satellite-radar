@@ -22,6 +22,12 @@ class SatelliteCatalogService:
 
         self.repository.upsert_tles_to_db(tle_updates)
 
+    def update_satellite_catalog_with_metadata(self) -> None:
+        celestrak_service = self.celestrak_service or CelestrakService()
+        metadata_updates = celestrak_service.fetch_satcat_metadata()
+
+        self.repository.update_metadata_in_db(metadata_updates)
+
     def get_all_satellites(self, *, limit: int | None = None) -> list[SatelliteCatalogItem]:
         return self.repository.get_all_satellites(limit=limit)
 

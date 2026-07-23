@@ -1,6 +1,11 @@
 from pymongo import DESCENDING, UpdateOne
 
-from app.models import SatelliteCatalogItem, SatelliteCatalogStatus, SatelliteTLEUpdate
+from app.models import (
+    SatelliteCatalogItem,
+    SatelliteCatalogStatus,
+    SatelliteMetadataUpdate,
+    SatelliteTLEUpdate,
+)
 
 
 class SatelliteCatalogRepository:
@@ -34,6 +39,31 @@ class SatelliteCatalogRepository:
             "satellite TLE documents into MongoDB"
         )
 
+    def update_metadata_in_db(self, metadata_updates: list[SatelliteMetadataUpdate]) -> None:
+        operations = [
+            UpdateOne(
+                {"satellite_id": item.satellite_id},
+                {
+                    "$set": {
+                        "satellite_name": item.satellite_name,
+                        "metadata": item.metadata.model_dump(mode="json"),
+                    }
+                },
+                upsert=False,
+            )
+            for item in metadata_updates
+        ]
+
+        if not operations:
+            return
+
+        result = self.collection.bulk_write(operations)
+        print(
+            f"Matched {result.matched_count}, "
+            f"modified {result.modified_count} "
+            "satellite metadata documents in MongoDB"
+        )
+
     def get_all_satellites(self, *, limit: int | None = None) -> list[SatelliteCatalogItem]:
         cursor = self.collection.find(
             {},
@@ -42,6 +72,7 @@ class SatelliteCatalogRepository:
                 "satellite_id": 1,
                 "satellite_name": 1,
                 "tle": 1,
+                "metadata": 1,
             },
         )
 

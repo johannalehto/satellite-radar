@@ -119,3 +119,85 @@ def test_fetch_tles_skips_invalid_entries_and_returns_valid_ones() -> None:
 
     assert len(results) == 1
     assert results[0].satellite_name == "ATLAS CENTAUR 2"
+
+
+def test_fetch_satcat_metadata_returns_metadata_updates() -> None:
+    raw_records = [
+        {
+            "NORAD_CAT_ID": 694,
+            "OBJECT_NAME": "ATLAS CENTAUR 2",
+            "OBJECT_TYPE": "ROCKET BODY",
+            "OPS_STATUS_CODE": "D",
+            "OWNER": "US",
+            "LAUNCH_DATE": "1963-11-27",
+            "LAUNCH_SITE": "AFETR",
+        }
+    ]
+
+    service = CelestrakService(
+        lines_loader=lambda: [],
+        satcat_loader=lambda: raw_records,
+    )
+    service.t = MagicMock()
+    service.t.utc_datetime.return_value = datetime(2026, 2, 25, 12, 0, tzinfo=UTC)
+
+    results = service.fetch_satcat_metadata()
+
+    assert len(results) == 1
+    assert results[0].satellite_id == "00694"
+    assert results[0].satellite_name == "ATLAS CENTAUR 2"
+    assert results[0].metadata.source == "celestrak"
+    assert results[0].metadata.fetched_at == datetime(2026, 2, 25, 12, 0, tzinfo=UTC)
+    assert results[0].metadata.owner == "US"
+    assert results[0].metadata.object_type == "ROCKET BODY"
+    assert results[0].metadata.launch_date == datetime(1963, 11, 27, tzinfo=UTC).date()
+    assert results[0].metadata.launch_site == "AFETR"
+
+
+def test_fetch_satcat_metadata_skips_invalid_records() -> None:
+    raw_records = [
+        {
+            "NORAD_CAT_ID": 694,
+            "OBJECT_NAME": "ATLAS CENTAUR 2",
+            "LAUNCH_DATE": "1963-11-27",
+        },
+        {
+            "NORAD_CAT_ID": 695,
+            "OBJECT_NAME": "BROKEN SAT",
+            "LAUNCH_DATE": "not-a-date",
+        },
+    ]
+
+    service = CelestrakService(
+        lines_loader=lambda: [],
+        satcat_loader=lambda: raw_records,
+    )
+
+    results = service.fetch_satcat_metadata()
+
+    assert len(results) == 1
+    assert results[0].satellite_id == "00694"
+
+
+def test_fetch_satcat_metadata_converts_empty_optional_strings_to_none() -> None:
+    raw_records = [
+        {
+            "NORAD_CAT_ID": 694,
+            "OBJECT_NAME": "ATLAS CENTAUR 2",
+            "OWNER": "",
+            "OBJECT_TYPE": "",
+            "LAUNCH_SITE": "",
+        }
+    ]
+
+    service = CelestrakService(
+        lines_loader=lambda: [],
+        satcat_loader=lambda: raw_records,
+    )
+
+    results = service.fetch_satcat_metadata()
+
+    assert len(results) == 1
+    assert results[0].metadata.owner is None
+    assert results[0].metadata.object_type is None
+    assert results[0].metadata.launch_site is None

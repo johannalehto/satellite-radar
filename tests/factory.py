@@ -7,6 +7,8 @@ from app.models import (
     RadarTrackPoint,
     SatelliteCatalogItem,
     SatelliteInfo,
+    SatelliteMetadata,
+    SatelliteMetadataUpdate,
     SatellitePassPoint,
     SatelliteRadarItem,
     SatelliteTLEUpdate,
@@ -75,12 +77,38 @@ def create_satellite_tle_update(**kwargs: Any) -> SatelliteTLEUpdate:
     return SatelliteTLEUpdate(**data)
 
 
+def create_satellite_metadata(**kwargs: Any) -> SatelliteMetadata:
+    data = {
+        "source": "celestrak",
+        "fetched_at": datetime(2026, 2, 25, 12, 0, tzinfo=UTC),
+        "owner": "US",
+        "object_type": "PAYLOAD",
+        "launch_date": datetime(1998, 11, 20, tzinfo=UTC).date(),
+        "launch_site": "TYMSC",
+    }
+    data.update(kwargs)
+    return SatelliteMetadata(**data)
+
+
+def create_satellite_metadata_update(**kwargs: Any) -> SatelliteMetadataUpdate:
+    metadata = kwargs.pop("metadata", None)
+    data = {
+        "satellite_id": "12345",
+        "satellite_name": "MockSatellite",
+        "metadata": metadata if metadata is not None else create_satellite_metadata(),
+    }
+    data.update(kwargs)
+    return SatelliteMetadataUpdate(**data)
+
+
 def create_satellite_catalog_item(**kwargs: Any) -> SatelliteCatalogItem:
     tle = kwargs.pop("tle", None)
+    metadata = kwargs.pop("metadata", None)
     data = {
         "satellite_id": "12345",
         "satellite_name": "MockSatellite",
         "tle": tle if tle is not None else create_tle(),
+        "metadata": metadata,
     }
     data.update(kwargs)
     return SatelliteCatalogItem(**data)
