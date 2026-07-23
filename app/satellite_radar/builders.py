@@ -33,11 +33,16 @@ def build_satellite_radar_item(
 ) -> SatelliteRadarItem:
     start_azimuth_deg = visible_track[0].azimuth_deg
     end_azimuth_deg = visible_track[-1].azimuth_deg
+    metadata = catalog_item.metadata
 
     return SatelliteRadarItem(
         info=SatelliteInfo(
             satellite_id=catalog_item.satellite_id,
             satellite_name=catalog_item.satellite_name,
+            owner=metadata.owner if metadata else None,
+            object_type=metadata.object_type if metadata else None,
+            launch_date=metadata.launch_date if metadata else None,
+            launch_site=metadata.launch_site if metadata else None,
         ),
         visibility=SatelliteVisibility(
             visible_from=visible_track[0].timestamp,

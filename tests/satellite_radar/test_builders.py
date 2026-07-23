@@ -7,7 +7,11 @@ from app.satellite_radar.builders import (
     build_satellite_radar_item,
     get_max_elevation,
 )
-from tests.factory import create_radar_track_point, create_satellite_catalog_item
+from tests.factory import (
+    create_radar_track_point,
+    create_satellite_catalog_item,
+    create_satellite_metadata,
+)
 
 
 def test_get_max_elevation_returns_highest_elevation() -> None:
@@ -53,6 +57,26 @@ def test_build_satellite_radar_item_builds_nested_response() -> None:
     assert result.end.azimuth_deg == 90.0
     assert result.end.direction == "E"
     assert result.track == track
+
+
+def test_build_satellite_radar_item_maps_catalog_metadata_to_info() -> None:
+    launch_date = datetime(1963, 11, 27, tzinfo=UTC).date()
+    catalog_item = create_satellite_catalog_item(
+        metadata=create_satellite_metadata(
+            owner="US",
+            object_type="ROCKET BODY",
+            launch_date=launch_date,
+            launch_site="AFETR",
+        ),
+    )
+    track = [create_radar_track_point()]
+
+    result = build_satellite_radar_item(catalog_item, track)
+
+    assert result.info.owner == "US"
+    assert result.info.object_type == "ROCKET BODY"
+    assert result.info.launch_date == launch_date
+    assert result.info.launch_site == "AFETR"
 
 
 @pytest.mark.parametrize(

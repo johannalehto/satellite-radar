@@ -4,8 +4,10 @@ Test response for web
 info:
   satellite_id: str
   satellite_name: str
-  country: str | None
-  info_text: str | None
+  owner: str | None
+  object_type: str | None
+  launch_date: date | None
+  launch_site: str | None
 
 visibility:
   visible_from: datetime

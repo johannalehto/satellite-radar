@@ -85,8 +85,10 @@ class RadarTrackPoint(BaseModel):
 class SatelliteInfo(BaseModel):
     satellite_id: str
     satellite_name: str
-    country: str | None = None
-    info_text: str | None = None
+    owner: str | None = None
+    object_type: str | None = None
+    launch_date: date | None = None
+    launch_site: str | None = None
 
 
 class SatelliteVisibility(BaseModel):
