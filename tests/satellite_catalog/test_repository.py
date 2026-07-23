@@ -1,18 +1,8 @@
 from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
-import pytest
-
 from app.satellite_catalog.repository import SatelliteCatalogRepository
-from tests.factory import create_celestrak_output, create_satellite_tle_update
-
-
-@pytest.fixture
-def celestrak_outputs():
-    return [
-        create_celestrak_output(satellite_id="12345", satellite_name="MockSat-1"),
-        create_celestrak_output(satellite_id="67890", satellite_name="MockSat-2"),
-    ]
+from tests.factory import create_satellite_tle_update
 
 
 def test_upsert_tles_to_db_builds_updateone_with_expected_fields() -> None:

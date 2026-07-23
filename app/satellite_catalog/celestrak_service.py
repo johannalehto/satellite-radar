@@ -7,7 +7,7 @@ from skyfield.api import load
 from skyfield.sgp4lib import EarthSatellite
 
 from app.config import CELESTRAK_100_BRIGHTEST_URL
-from app.models import CelestrakSatelliteOutput, RawTLEEntry, TLEData, TLEParsed
+from app.models import RawTLEEntry, SatelliteTLEUpdate, TLEData, TLEParsed
 
 logger = logging.getLogger(__name__)
 
@@ -66,18 +66,18 @@ class CelestrakService:
 
         return entries
 
-    def fetch_tles(self) -> list[CelestrakSatelliteOutput]:
+    def fetch_tles(self) -> list[SatelliteTLEUpdate]:
         fetched_at = self.t.utc_datetime()
         raw_lines = self._lines_loader()
         raw_entries = self._parse_raw_tle_entries(raw_lines)
 
-        all_celestrak_satellites: list[CelestrakSatelliteOutput] = []
+        satellites_with_tle_update: list[SatelliteTLEUpdate] = []
 
         for entry in raw_entries:
             satellite = EarthSatellite(entry.line1, entry.line2, entry.name, self.ts)
 
-            all_celestrak_satellites.append(
-                CelestrakSatelliteOutput(
+            satellites_with_tle_update.append(
+                SatelliteTLEUpdate(
                     satellite_id=satellite.model.satnum_str,
                     satellite_name=entry.name,
                     tle=TLEData(
@@ -91,7 +91,7 @@ class CelestrakService:
                 )
             )
 
-        satellite_names = [sat.satellite_name for sat in all_celestrak_satellites]
+        satellite_names = [sat.satellite_name for sat in satellites_with_tle_update]
         logger.info("DEBUG: Added Celestrak satellites: %s", satellite_names)
 
-        return all_celestrak_satellites
+        return satellites_with_tle_update

@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 import pytest
 from skyfield.api import load
 
-from app.models import CelestrakSatelliteOutput
+from app.models import SatelliteTLEUpdate
 from app.satellite_catalog.celestrak_service import CelestrakService, RawTLEEntry
 from tests.factory import create_earth_satellite
 
@@ -88,7 +88,7 @@ def test_fetch_tles_returns_outputs_with_tle_data() -> None:
     results = service.fetch_tles()
 
     assert len(results) == 1
-    assert isinstance(results[0], CelestrakSatelliteOutput)
+    assert isinstance(results[0], SatelliteTLEUpdate)
     assert results[0].satellite_name == "ATLAS CENTAUR 2"
     assert results[0].satellite_id == "00694"
 

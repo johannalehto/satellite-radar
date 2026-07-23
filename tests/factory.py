@@ -4,7 +4,6 @@ from typing import Any
 from skyfield.api import EarthSatellite, load
 
 from app.models import (
-    CelestrakSatelliteOutput,
     RadarTrackPoint,
     SatelliteCatalogItem,
     SatelliteInfo,
@@ -63,19 +62,6 @@ def create_tle(**kwargs: Any) -> TLEData:
     }
     data.update(kwargs)
     return TLEData(**data)
-
-
-def create_celestrak_output(**kwargs: Any) -> CelestrakSatelliteOutput:
-    """
-    Factory for creating a mock CelestrakSatelliteOutput object.
-    """
-    data = {
-        "satellite_id": "12345",
-        "satellite_name": "MockSatellite",
-        "tle": create_tle(),
-    }
-    data.update(kwargs)
-    return CelestrakSatelliteOutput(**data)
 
 
 def create_satellite_tle_update(**kwargs: Any) -> SatelliteTLEUpdate:

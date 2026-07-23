@@ -27,12 +27,6 @@ class RawTLEEntry(BaseModel):
     line2: str
 
 
-class CelestrakSatelliteOutput(BaseModel):
-    satellite_id: str
-    satellite_name: str
-    tle: TLEData
-
-
 class SatelliteTLEUpdate(BaseModel):
     satellite_id: str
     satellite_name: str
