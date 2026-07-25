@@ -17,6 +17,8 @@ def create_app() -> FastAPI:
             "http://localhost:3000",
             "http://127.0.0.1:3000",
             "https://satellites-debug-ui.fly.dev",
+            "http://localhost:5173",  # Vite default ports
+            "http://127.0.0.1:5173",
         ],
         allow_credentials=True,
         allow_methods=["*"],
