@@ -19,6 +19,7 @@ def create_app() -> FastAPI:
             "https://satellites-debug-ui.fly.dev",
             "http://localhost:5173",  # Vite default ports
             "http://127.0.0.1:5173",
+            "https://satellite-radar-web.fly.dev",
         ],
         allow_credentials=True,
         allow_methods=["*"],
